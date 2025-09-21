@@ -1,5 +1,5 @@
 -- 🎣 Fish It Discord Notifier — Delta Executor (Roblox)
--- ✅ Deteksi perubahan di InventoryController
+-- ✅ Deteksi perubahan di leaderstats.Caught
 -- ✅ Input webhook manual via GUI
 -- ✅ Debug log untuk cek perubahan
 
@@ -111,22 +111,26 @@ local function sendToDiscord(webhookUrl, fishName, rarity)
 end
 
 -- ==============================================
--- 🐟 DETEKSI PERUBAHAN DI INVENTORYCONTROLLER
+-- 🐟 DETEKSI PERUBAHAN DI LEADERSTATS.CAUGHT
 -- ==============================================
 local function startFishListener(webhookUrl)
-    local inventoryController = game:GetService("ReplicatedStorage"):FindFirstChild("Controllers"):FindFirstChild("InventoryController")
+    local player = LocalPlayer
+    local leaderstats = player:WaitForChild("leaderstats")
+    local caught = leaderstats:WaitForChild("Caught")
 
-    if not inventoryController then
-        warn("❌ 'InventoryController' tidak ditemukan!")
-        return
-    end
-
-    -- Cek apakah InventoryController adalah ModuleScript
-    if inventoryController:IsA("ModuleScript") then
-        local source = inventoryController.Source
-        if source then
-            print("🔧 Source code InventoryController:", source)
-        end
+    -- Cek apakah Caught adalah NumberValue atau IntValue
+    if caught:IsA("NumberValue") or caught:IsA("IntValue") then
+        local oldValue = caught.Value
+        caught.Changed:Connect(function()
+            local newValue = caught.Value
+            if newValue > oldValue then
+                print("🔧 Caught bertambah dari", oldValue, "ke", newValue)
+                sendToDiscord(webhookUrl, "Ikan Baru", "?")
+                oldValue = newValue
+            end
+        end)
+    else
+        warn("❌ 'Caught' bukan NumberValue atau IntValue!")
     end
 
     print("✅ Sistem notifikasi aktif!")
