@@ -1,5 +1,5 @@
 -- 🎣 Fish It Discord Notifier — Delta Executor (Roblox)
--- ✅ Deteksi perubahan di leaderstats.Caught
+-- ✅ Deteksi perubahan di Inventory.Main
 -- ✅ Input webhook manual via GUI
 -- ✅ Debug log untuk cek perubahan
 
@@ -111,27 +111,32 @@ local function sendToDiscord(webhookUrl, fishName, rarity)
 end
 
 -- ==============================================
--- 🐟 DETEKSI PERUBAHAN DI LEADERSTATS.CAUGHT
+-- 🐟 DETEKSI PERUBAHAN DI INVENTORY.MAIN
 -- ==============================================
 local function startFishListener(webhookUrl)
-    local player = LocalPlayer
-    local leaderstats = player:WaitForChild("leaderstats")
-    local caught = leaderstats:WaitForChild("Caught")
+    local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+    local inventory = playerGui:WaitForChild("Inventory")
+    local main = inventory:WaitForChild("Main")
 
-    -- Cek apakah Caught adalah NumberValue atau IntValue
-    if caught:IsA("NumberValue") or caught:IsA("IntValue") then
-        local oldValue = caught.Value
-        caught.Changed:Connect(function()
-            local newValue = caught.Value
-            if newValue > oldValue then
-                print("🔧 Caught bertambah dari", oldValue, "ke", newValue)
-                sendToDiscord(webhookUrl, "Ikan Baru", "?")
-                oldValue = newValue
+    -- Cek apakah Main memiliki TextLabel atau TextButton
+    local function findTextLabel(parent)
+        for _, child in ipairs(parent:GetChildren()) do
+            if child:IsA("TextLabel") or child:IsA("TextButton") then
+                child:GetPropertyChangedSignal("Text"):Connect(function()
+                    local text = child.Text
+                    if text:find("ikan") or text:find("fish") then
+                        print("🔧 Teks berubah:", text)
+                        sendToDiscord(webhookUrl, text, "?")
+                    end
+                end)
             end
-        end)
-    else
-        warn("❌ 'Caught' bukan NumberValue atau IntValue!")
+            if child:IsA("Folder") or child:IsA("Model") then
+                findTextLabel(child)
+            end
+        end
     end
+
+    findTextLabel(main)
 
     print("✅ Sistem notifikasi aktif!")
 end
