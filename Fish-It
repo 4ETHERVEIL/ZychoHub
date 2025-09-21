@@ -1,5 +1,5 @@
 -- 🎣 Fish It Discord Notifier — Delta Executor (Roblox)
--- ✅ Deteksi perubahan di Inventory.Main
+-- ✅ Deteksi perubahan di Inventory.ItemName
 -- ✅ Input webhook manual via GUI
 -- ✅ Debug log untuk cek perubahan
 
@@ -111,15 +111,15 @@ local function sendToDiscord(webhookUrl, fishName, rarity)
 end
 
 -- ==============================================
--- 🐟 DETEKSI PERUBAHAN DI INVENTORY.MAIN
+-- 🐟 DETEKSI PERUBAHAN DI INVENTORY.ITEMNAME
 -- ==============================================
 local function startFishListener(webhookUrl)
     local playerGui = LocalPlayer:WaitForChild("PlayerGui")
     local inventory = playerGui:WaitForChild("Inventory")
-    local main = inventory:WaitForChild("Main")
+    local gridLayout = inventory:WaitForChild("UIGridLayout")
 
-    -- Cek apakah Main memiliki TextLabel atau TextButton
-    local function findTextLabel(parent)
+    -- Cek apakah UIGridLayout memiliki Tile
+    local function findItemName(parent)
         for _, child in ipairs(parent:GetChildren()) do
             if child:IsA("TextLabel") or child:IsA("TextButton") then
                 child:GetPropertyChangedSignal("Text"):Connect(function()
@@ -131,12 +131,12 @@ local function startFishListener(webhookUrl)
                 end)
             end
             if child:IsA("Folder") or child:IsA("Model") then
-                findTextLabel(child)
+                findItemName(child)
             end
         end
     end
 
-    findTextLabel(main)
+    findItemName(gridLayout)
 
     print("✅ Sistem notifikasi aktif!")
 end
