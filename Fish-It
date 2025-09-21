@@ -1,5 +1,5 @@
 -- 🎣 Fish It Discord Notifier — Delta Executor (Roblox)
--- ✅ Deteksi perubahan teks di PlayerGui
+-- ✅ Deteksi perubahan di InventoryController
 -- ✅ Input webhook manual via GUI
 -- ✅ Debug log untuk cek perubahan
 
@@ -111,30 +111,23 @@ local function sendToDiscord(webhookUrl, fishName, rarity)
 end
 
 -- ==============================================
--- 🐟 DETEKSI PERUBAHAN TEKS DI PLAYERGUI
+-- 🐟 DETEKSI PERUBAHAN DI INVENTORYCONTROLLER
 -- ==============================================
 local function startFishListener(webhookUrl)
-    local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+    local inventoryController = game:GetService("ReplicatedStorage"):FindFirstChild("Controllers"):FindFirstChild("InventoryController")
 
-    -- Cari semua TextLabel di PlayerGui
-    local function findTextLabel(parent)
-        for _, child in ipairs(parent:GetChildren()) do
-            if child:IsA("TextLabel") then
-                child:GetPropertyChangedSignal("Text"):Connect(function()
-                    local text = child.Text
-                    if text:find("caught") or text:find("ikan") or text:find("fish") then
-                        print("🔧 Teks berubah:", text)
-                        sendToDiscord(webhookUrl, text, "?")
-                    end
-                end)
-            end
-            if child:IsA("Folder") or child:IsA("Model") then
-                findTextLabel(child)
-            end
-        end
+    if not inventoryController then
+        warn("❌ 'InventoryController' tidak ditemukan!")
+        return
     end
 
-    findTextLabel(playerGui)
+    -- Cek apakah InventoryController adalah ModuleScript
+    if inventoryController:IsA("ModuleScript") then
+        local source = inventoryController.Source
+        if source then
+            print("🔧 Source code InventoryController:", source)
+        end
+    end
 
     print("✅ Sistem notifikasi aktif!")
 end
