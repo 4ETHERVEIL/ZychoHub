@@ -1,0 +1,179 @@
+-- 🎣 Fish It Discord Notifier — Delta Executor (Roblox)
+-- ✅ Deteksi perubahan teks di PlayerGui
+-- ✅ Input webhook manual via GUI
+-- ✅ Debug log untuk cek perubahan
+
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+local LocalPlayer = Players.LocalPlayer
+local StarterGui = game:GetService("StarterGui")
+
+-- ==============================================
+-- 🖼️ BUAT GUI INPUT WEBHOOK
+-- ==============================================
+local function createWebhookInputGUI()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "FishItWebhookSetup"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = nil
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 300, 0, 180)
+    frame.Position = UDim2.new(0.5, -150, 0.5, -90)
+    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    frame.BorderSizePixel = 0
+    frame.Parent = screenGui
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 40)
+    title.Position = UDim2.new(0, 0, 0, 0)
+    title.BackgroundTransparency = 1
+    title.Text = "🎣 Fish It Notifier Setup"
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 16
+    title.Parent = frame
+
+    local inputBox = Instance.new("TextBox")
+    inputBox.Size = UDim2.new(0.9, 0, 0, 35)
+    inputBox.Position = UDim2.new(0.05, 0, 0, 50)
+    inputBox.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+    inputBox.TextColor3 = Color3.fromRGB(220, 220, 220)
+    inputBox.Font = Enum.Font.SourceSans
+    inputBox.TextSize = 14
+    inputBox.PlaceholderText = "Paste Webhook URL di sini..."
+    inputBox.Parent = frame
+
+    local submitBtn = Instance.new("TextButton")
+    submitBtn.Size = UDim2.new(0.9, 0, 0, 40)
+    submitBtn.Position = UDim2.new(0.05, 0, 0, 95)
+    submitBtn.BackgroundColor3 = Color3.fromRGB(46, 204, 113)
+    submitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    submitBtn.Font = Enum.Font.GothamBold
+    submitBtn.TextSize = 15
+    submitBtn.Text = "✅ Submit & Mulai Notif"
+    submitBtn.Parent = frame
+
+    local statusLabel = Instance.new("TextLabel")
+    statusLabel.Size = UDim2.new(1, 0, 0, 30)
+    statusLabel.Position = UDim2.new(0, 0, 0, 140)
+    statusLabel.BackgroundTransparency = 1
+    statusLabel.Text = ""
+    statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    statusLabel.Font = Enum.Font.SourceSans
+    statusLabel.TextSize = 13
+    statusLabel.TextWrapped = true
+    statusLabel.Parent = frame
+
+    return screenGui, inputBox, submitBtn, statusLabel
+end
+
+-- ==============================================
+-- 📤 KIRIM NOTIF KE DISCORD
+-- ==============================================
+local function sendToDiscord(webhookUrl, fishName, rarity)
+    local payload = {
+        ["username"] = "🎣 Fish It Notifier",
+        ["avatar_url"] = "https://i.imgur.com/fish-icon.png",
+        ["embeds"] = {{
+            ["title"] = "🎉 Ikan Didapat!",
+            ["description"] = "**" .. LocalPlayer.Name .. "** baru saja menangkap:\n> **" .. (fishName or "Ikan Misterius") .. "**",
+            ["color"] = 0x3498db,
+            ["fields"] = {{
+                ["name"] = "⭐ Rarity",
+                ["value"] = rarity or "Tidak Diketahui",
+                ["inline"] = true
+            }},
+            ["footer"] = {
+                ["text"] = "Auto Notif • via Delta Executor",
+                ["icon_url"] = "https://i.imgur.com/water-wave.png"
+            },
+            ["thumbnail"] = {
+                ["url"] = "https://i.imgur.com/fish-emoji.png"
+            }
+        }}
+    }
+
+    local success, response = pcall(function()
+        return request({
+            Url = webhookUrl,
+            Method = "POST",
+            Headers = { ["Content-Type"] = "application/json" },
+            Body = HttpService:JSONEncode(payload)
+        })
+    end)
+
+    if success then
+        print("✅ Notif terkirim: " .. fishName)
+    else
+        warn("❌ Gagal kirim notif:", response)
+    end
+end
+
+-- ==============================================
+-- 🐟 DETEKSI PERUBAHAN TEKS DI PLAYERGUI
+-- ==============================================
+local function startFishListener(webhookUrl)
+    local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+    -- Cari semua TextLabel di PlayerGui
+    local function findTextLabel(parent)
+        for _, child in ipairs(parent:GetChildren()) do
+            if child:IsA("TextLabel") then
+                child:GetPropertyChangedSignal("Text"):Connect(function()
+                    local text = child.Text
+                    if text:find("caught") or text:find("ikan") or text:find("fish") then
+                        print("🔧 Teks berubah:", text)
+                        sendToDiscord(webhookUrl, text, "?")
+                    end
+                end)
+            end
+            if child:IsA("Folder") or child:IsA("Model") then
+                findTextLabel(child)
+            end
+        end
+    end
+
+    findTextLabel(playerGui)
+
+    print("✅ Sistem notifikasi aktif!")
+end
+
+-- ==============================================
+-- 🚀 JALANKAN SETUP GUI
+-- ==============================================
+print("🚀 Menyiapkan Fish It Discord Notifier...")
+
+local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+local gui, inputBox, submitBtn, statusLabel = createWebhookInputGUI()
+gui.Parent = playerGui
+
+submitBtn.MouseButton1Click:Connect(function()
+    local url = inputBox.Text:match("^%s*(.-)%s*$")
+
+    if url == "" then
+        statusLabel.Text = "❌ URL tidak boleh kosong!"
+        statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+        return
+    end
+
+    if not url:find("discord.com/api/webhooks/") then
+        statusLabel.Text = "❌ URL tidak valid! Pastikan dari Discord Webhook."
+        statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+        return
+    end
+
+    statusLabel.Text = "✅ Webhook diterima! Sistem aktif..."
+    statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+
+    wait(1)
+    gui:Destroy()
+
+    startFishListener(url)
+
+    StarterGui:SetCore("SendNotification", {
+        Title = "🎣 Fish It Notifier",
+        Text = "Notifikasi Discord aktif! Tunggu sampai dapat ikan.",
+        Duration = 5
+    })
+end)
