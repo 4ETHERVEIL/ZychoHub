@@ -1,7 +1,7 @@
 -- Fish It! Webhook Notification Script (Game ID: 121864768012064)
 -- Compatible with Delta Executor
 -- Modern UI Design for Fish It! by WoozyNate
--- [DIPERBAIKI OLEH AI] - Perbaikan referensi GUI, error handling, dan task scheduling.
+-- [DIPERBAIKI & DITULIS ULANG] - Fitur Input Webhook Manual + Bug Fixes
 
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
@@ -15,14 +15,13 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 -- Configuration untuk Fish It!
 local CONFIG = {
-    WEBHOOK_URL = "https://discord.com/api/webhooks/1419176020736741508/kBcVsSpVh-6eHj5IzUz1eTnBlqKCCg-GMafUJWvkeHjoUnFO5iJ2GpRFa7H9LUG1sw3n", -- Masukkan Discord Webhook URL Anda di sini
+    WEBHOOK_URL = "", -- Kosongkan untuk input manual
     ENABLED = true,
     SHOW_GUI = true,
     NOTIFICATION_DURATION = 5,
-    RARE_FISH_ONLY = false, -- Set true jika hanya ingin notif ikan rare/shark
-    SECRET_FISH_ONLY = false, -- Set true untuk hanya secret fish
+    RARE_FISH_ONLY = false,
+    SECRET_FISH_ONLY = false,
     RARE_FISH_LIST = {
-        -- Berdasarkan update Fish It!
         "Shark", "Megalodon", "Monster Shark", "Eerie Shark", "Thin Armor Shark",
         "Mythic Shark", "Secret", "Golden", "Diamond", "Crystal", "Legendary",
         "Epic", "Rare", "Rainbow", "Neon", "Glowing", "Ancient"
@@ -31,6 +30,46 @@ local CONFIG = {
         "Monster Shark", "Eerie Shark", "Secret", "Mythic"
     }
 }
+
+-- Fungsi untuk memvalidasi dan menyimpan webhook URL
+local function saveWebhookURL(inputText)
+    if not inputText or inputText == "" then
+        StarterGui:SetCore("SendNotification", {
+            Title = "❌ Error";
+            Text = "URL tidak boleh kosong!";
+            Duration = 4;
+        })
+        return false
+    end
+
+    if not inputText:find("^https://discord.com/api/webhooks/") then
+        StarterGui:SetCore("SendNotification", {
+            Title = "❌ Error";
+            Text = "URL harus dimulai dengan 'https://discord.com/api/webhooks/'";
+            Duration = 5;
+        })
+        return false
+    end
+
+    -- Simpan ke CONFIG
+    CONFIG.WEBHOOK_URL = inputText
+
+    -- Update label status di GUI
+    if _G.FishItGUI and _G.FishItGUI.webhookLabel then
+        _G.FishItGUI.webhookLabel.Text = "📡 Webhook: ✅ Terhubung"
+        _G.FishItGUI.webhookLabel.TextColor3 = Color3.fromRGB(80, 255, 80)
+    end
+
+    -- Beri notifikasi sukses
+    StarterGui:SetCore("SendNotification", {
+        Title = "✅ Sukses";
+        Text = "Webhook URL berhasil disimpan!";
+        Duration = 3;
+    })
+
+    print("✅ Webhook URL diperbarui:", CONFIG.WEBHOOK_URL)
+    return true
+end
 
 -- Modern GUI Creation untuk Fish It!
 local function createModernGUI()
@@ -43,8 +82,8 @@ local function createModernGUI()
     -- Main Frame dengan Fish It! theme
     local mainFrame = Instance.new("Frame")
     mainFrame.Name = "MainFrame"
-    mainFrame.Size = UDim2.new(0, 420, 0, 350)
-    mainFrame.Position = UDim2.new(0.5, -210, 0.5, -175)
+    mainFrame.Size = UDim2.new(0, 420, 0, 420) -- Diperbesar untuk menampung input
+    mainFrame.Position = UDim2.new(0.5, -210, 0.5, -210)
     mainFrame.BackgroundColor3 = Color3.fromRGB(15, 25, 40)
     mainFrame.BorderSizePixel = 0
     mainFrame.ZIndex = 10
@@ -66,12 +105,12 @@ local function createModernGUI()
     gradient.Parent = mainFrame
     
     -- Animated water effect
-    task.spawn(function() -- <-- DIPERBAIKI: Gunakan task.spawn
+    task.spawn(function()
         while mainFrame.Parent do
             for i = 1, 360 do
                 if mainFrame.Parent then
                     gradient.Rotation = -45 + math.sin(i * 0.02) * 5
-                    task.wait(0.05) -- <-- DIPERBAIKI: Gunakan task.wait
+                    task.wait(0.05)
                 else
                     break
                 end
@@ -221,12 +260,61 @@ local function createModernGUI()
     webhookLabel.TextXAlignment = Enum.TextXAlignment.Left
     webhookLabel.ZIndex = 12
     webhookLabel.Parent = statusFrame
-    
+
+    -- Webhook Input Frame (BARU)
+    local webhookInputFrame = Instance.new("Frame")
+    webhookInputFrame.Name = "WebhookInputFrame"
+    webhookInputFrame.Size = UDim2.new(1, -20, 0, 60)
+    webhookInputFrame.Position = UDim2.new(0, 10, 0, 170)
+    webhookInputFrame.BackgroundColor3 = Color3.fromRGB(25, 40, 65)
+    webhookInputFrame.BorderSizePixel = 0
+    webhookInputFrame.ZIndex = 11
+    webhookInputFrame.Parent = mainFrame
+
+    local inputCorner = Instance.new("UICorner")
+    inputCorner.CornerRadius = UDim.new(0, 10)
+    inputCorner.Parent = webhookInputFrame
+
+    -- Label untuk input
+    local inputLabel = Instance.new("TextLabel")
+    inputLabel.Name = "InputLabel"
+    inputLabel.Text = "🔗 Masukkan Webhook URL:"
+    inputLabel.Size = UDim2.new(1, -10, 0, 20)
+    inputLabel.Position = UDim2.new(0, 5, 0, 5)
+    inputLabel.BackgroundTransparency = 1
+    inputLabel.TextColor3 = Color3.fromRGB(220, 220, 255)
+    inputLabel.TextScaled = true
+    inputLabel.Font = Enum.Font.Gotham
+    inputLabel.TextXAlignment = Enum.TextXAlignment.Left
+    inputLabel.ZIndex = 12
+    inputLabel.Parent = webhookInputFrame
+
+    -- TextBox untuk input URL
+    local webhookInput = Instance.new("TextBox")
+    webhookInput.Name = "WebhookInput"
+    webhookInput.Text = CONFIG.WEBHOOK_URL or ""
+    webhookInput.PlaceholderText = "https://discord.com/api/webhooks/..."
+    webhookInput.Size = UDim2.new(1, -10, 0, 25)
+    webhookInput.Position = UDim2.new(0, 5, 0, 30)
+    webhookInput.BackgroundTransparency = 0
+    webhookInput.BackgroundColor3 = Color3.fromRGB(35, 50, 75)
+    webhookInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+    webhookInput.TextScaled = true
+    webhookInput.Font = Enum.Font.Gotham
+    webhookInput.TextXAlignment = Enum.TextXAlignment.Left
+    webhookInput.ClearTextOnFocus = false
+    webhookInput.ZIndex = 13
+    webhookInput.Parent = webhookInputFrame
+
+    local textBoxCorner = Instance.new("UICorner")
+    textBoxCorner.CornerRadius = UDim.new(0, 6)
+    textBoxCorner.Parent = webhookInput
+
     -- Control Buttons Frame
     local buttonFrame = Instance.new("Frame")
     buttonFrame.Name = "ButtonFrame"
     buttonFrame.Size = UDim2.new(1, -20, 0, 100)
-    buttonFrame.Position = UDim2.new(0, 10, 0, 170)
+    buttonFrame.Position = UDim2.new(0, 10, 0, 240)
     buttonFrame.BackgroundTransparency = 1
     buttonFrame.ZIndex = 11
     buttonFrame.Parent = mainFrame
@@ -284,6 +372,24 @@ local function createModernGUI()
     local rareCorner = Instance.new("UICorner")
     rareCorner.CornerRadius = UDim.new(0, 10)
     rareCorner.Parent = rareToggle
+
+    -- Tombol Simpan Webhook (BARU)
+    local saveWebhookBtn = Instance.new("TextButton")
+    saveWebhookBtn.Name = "SaveWebhookButton"
+    saveWebhookBtn.Text = "💾 Simpan Webhook"
+    saveWebhookBtn.Size = UDim2.new(0, 150, 0, 35)
+    saveWebhookBtn.Position = UDim2.new(0.5, -75, 0, 350)
+    saveWebhookBtn.BackgroundColor3 = Color3.fromRGB(70, 180, 100)
+    saveWebhookBtn.BorderSizePixel = 0
+    saveWebhookBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    saveWebhookBtn.Font = Enum.Font.GothamBold
+    saveWebhookBtn.TextScaled = true
+    saveWebhookBtn.ZIndex = 13
+    saveWebhookBtn.Parent = mainFrame
+
+    local saveBtnCorner = Instance.new("UICorner")
+    saveBtnCorner.CornerRadius = UDim.new(0, 8)
+    saveBtnCorner.Parent = saveWebhookBtn
     
     -- Credits dan Info
     local credits = Instance.new("TextLabel")
@@ -308,14 +414,21 @@ local function createModernGUI()
         testBtn = testBtn,
         rareToggle = rareToggle,
         closeBtn = closeBtn,
-        minBtn = minBtn
+        minBtn = minBtn,
+        webhookInput = webhookInput,
+        saveWebhookBtn = saveWebhookBtn
     }
 end
 
 -- Enhanced Webhook Function untuk Fish It!
 local function sendWebhook(fishData)
     if not CONFIG.WEBHOOK_URL or CONFIG.WEBHOOK_URL == "" then
-        warn("❌ Webhook URL tidak diatur!")
+        warn("❌ Webhook URL belum diatur!")
+        StarterGui:SetCore("SendNotification", {
+            Title = "⚠️ Webhook Error";
+            Text = "Silakan masukkan Webhook URL di GUI!";
+            Duration = 5;
+        })
         return
     end
     
@@ -394,7 +507,12 @@ local function sendWebhook(fishData)
     if success then
         print("✅ Webhook berhasil dikirim!")
     else
-        warn("❌ Gagal mengirim webhook ke URL:", CONFIG.WEBHOOK_URL, "\nError:", tostring(response)) -- <-- DIPERBAIKI: Tambahkan detail error
+        warn("❌ Gagal mengirim webhook ke URL:", CONFIG.WEBHOOK_URL, "\nError:", tostring(response))
+        StarterGui:SetCore("SendNotification", {
+            Title = "❌ Webhook Gagal";
+            Text = "Periksa URL atau koneksi internet Anda.";
+            Duration = 5;
+        })
     end
 end
 
@@ -435,7 +553,6 @@ end
 local function getPlayerLocation()
     if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
         local position = player.Character.HumanoidRootPart.Position
-        -- Determine location based on position (customize based on Fish It! map)
         if position.Y > 50 then
             return "Spawn Island"
         elseif position.Y < -20 then
@@ -452,12 +569,10 @@ local function setupFishDetection()
     local function monitorGui()
         local function checkForFishNotification(guiElement)
             if guiElement.Name:find("Notification") or guiElement.Name:find("Fish") or guiElement.Name:find("Catch") then
-                -- Look for text labels that might contain fish info
                 for _, descendant in pairs(guiElement:GetDescendants()) do
                     if descendant:IsA("TextLabel") and descendant.Text then
                         local text = descendant.Text:lower()
                         if text:find("caught") or text:find("fish") or text:find("shark") then
-                            -- Try to extract fish name from notification
                             local fishName = descendant.Text:match("caught (.+)") or 
                                            descendant.Text:match("fish: (.+)") or 
                                            descendant.Text
@@ -465,7 +580,6 @@ local function setupFishDetection()
                             if fishName and fishName ~= "" then
                                 local rarity = getRarity(fishName)
                                 
-                                -- Apply filters
                                 if CONFIG.RARE_FISH_ONLY and rarity == "Common" then
                                     return
                                 end
@@ -474,7 +588,6 @@ local function setupFishDetection()
                                     return
                                 end
                                 
-                                -- Prevent spam
                                 local currentTime = tick()
                                 if currentTime - lastFishTime < 2 then
                                     return
@@ -493,14 +606,12 @@ local function setupFishDetection()
                                 }
                                 
                                 -- Update GUI
-                                if CONFIG.SHOW_GUI and _G.FishItGUI and _G.FishItGUI.fishCountLabel then -- <-- DIPERBAIKI: Gunakan referensi global
+                                if CONFIG.SHOW_GUI and _G.FishItGUI and _G.FishItGUI.fishCountLabel then
                                     _G.FishItGUI.fishCountLabel.Text = "🐟 Ikan Tertangkap: " .. fishCount
                                 end
                                 
-                                -- Send webhook
                                 sendWebhook(fishData)
                                 
-                                -- Show notification
                                 StarterGui:SetCore("SendNotification", {
                                     Title = "🎣 Fish It! - Ikan Tertangkap!";
                                     Text = fishName .. " (" .. rarity .. ")";
@@ -522,7 +633,6 @@ local function setupFishDetection()
     -- Method 2: Monitor ReplicatedStorage for fish data
     local function monitorReplicatedStorage()
         if ReplicatedStorage:FindFirstChild("FishData") or ReplicatedStorage:FindFirstChild("CatchEvent") then
-            -- Monitor for fish catch events
             for _, child in pairs(ReplicatedStorage:GetChildren()) do
                 if child:IsA("RemoteEvent") and (child.Name:find("Fish") or child.Name:find("Catch")) then
                     child.OnClientEvent:Connect(function(data)
@@ -562,7 +672,6 @@ local function setupFishDetection()
                 if CONFIG.SECRET_FISH_ONLY and rarity ~= "Secret" and rarity ~= "Mythic" then
                     return
                 end
-                -- Prevent duplicate detection
                 local currentTime = tick()
                 if currentTime - lastFishTime < 1 then
                     return
@@ -577,8 +686,7 @@ local function setupFishDetection()
                     rod = "Current Rod",
                     timestamp = os.date("%H:%M:%S - %d/%m/%Y")
                 }
-                -- Update GUI
-                if CONFIG.SHOW_GUI and _G.FishItGUI and _G.FishItGUI.fishCountLabel then -- <-- DIPERBAIKI: Gunakan referensi global
+                if CONFIG.SHOW_GUI and _G.FishItGUI and _G.FishItGUI.fishCountLabel then
                     _G.FishItGUI.fishCountLabel.Text = "🐟 Ikan Tertangkap: " .. fishCount
                 end
                 sendWebhook(fishData)
@@ -600,7 +708,6 @@ local function setupFishDetection()
         end
     end
     
-    -- Start all monitoring methods
     monitorGui()
     monitorReplicatedStorage()
     monitorInventory()
@@ -610,9 +717,9 @@ end
 local screenGui, guiElements
 if CONFIG.SHOW_GUI then
     screenGui, guiElements = createModernGUI()
-    _G.FishItGUI = guiElements -- <-- DIPERBAIKI: Simpan referensi global
+    _G.FishItGUI = guiElements -- Simpan referensi global
 
-    -- Button Functions
+    -- Setup Button Functions
     guiElements.toggleBtn.MouseButton1Click:Connect(function()
         CONFIG.ENABLED = not CONFIG.ENABLED
         guiElements.toggleBtn.Text = CONFIG.ENABLED and "⏸️ Matikan" or "▶️ Aktifkan"
@@ -631,11 +738,6 @@ if CONFIG.SHOW_GUI then
             timestamp = os.date("%H:%M:%S - %d/%m/%Y")
         }
         sendWebhook(testData)
-        StarterGui:SetCore("SendNotification", {
-            Title = "🧪 Webhook Test";
-            Text = "Test webhook dikirim ke Discord!";
-            Duration = 3;
-        })
     end)
 
     guiElements.rareToggle.MouseButton1Click:Connect(function()
@@ -646,25 +748,37 @@ if CONFIG.SHOW_GUI then
 
     guiElements.closeBtn.MouseButton1Click:Connect(function()
         screenGui:Destroy()
-        _G.FishItGUI = nil -- <-- DIPERBAIKI: Bersihkan referensi global
+        _G.FishItGUI = nil
     end)
 
     guiElements.minBtn.MouseButton1Click:Connect(function()
         local isMinimized = guiElements.mainFrame.Size.Y.Offset <= 80
         if isMinimized then
-            -- Restore window
             local tween = TweenService:Create(guiElements.mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
-                Size = UDim2.new(0, 420, 0, 350)
+                Size = UDim2.new(0, 420, 0, 420)
             })
             tween:Play()
             guiElements.minBtn.Text = "−"
         else
-            -- Minimize window
             local tween = TweenService:Create(guiElements.mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
                 Size = UDim2.new(0, 420, 0, 60)
             })
             tween:Play()
             guiElements.minBtn.Text = "□"
+        end
+    end)
+
+    -- Hubungkan tombol Simpan Webhook
+    guiElements.saveWebhookBtn.MouseButton1Click:Connect(function()
+        local inputText = guiElements.webhookInput.Text
+        saveWebhookURL(inputText)
+    end)
+
+    -- Simpan saat tekan Enter
+    guiElements.webhookInput.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            local inputText = guiElements.webhookInput.Text
+            saveWebhookURL(inputText)
         end
     end)
 
@@ -680,13 +794,13 @@ if CONFIG.SHOW_GUI then
     end
 
     local function updateDrag(input)
-        if dragging and dragStart and guiElements and guiElements.mainFrame and guiElements.mainFrame.Parent then -- <-- DIPERBAIKI: Tambahkan pengecekan
+        if dragging and dragStart and _G.FishItGUI and _G.FishItGUI.mainFrame and _G.FishItGUI.mainFrame.Parent then
             local delta = input.Position - dragStart
             local newPos = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, 
                                    startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-            guiElements.mainFrame.Position = newPos
-            if guiElements.shadow and guiElements.shadow.Parent then
-                guiElements.shadow.Position = UDim2.new(0, newPos.X.Offset - 7, 0, newPos.Y.Offset - 7)
+            _G.FishItGUI.mainFrame.Position = newPos
+            if _G.FishItGUI.shadow and _G.FishItGUI.shadow.Parent then
+                _G.FishItGUI.shadow.Position = UDim2.new(0, newPos.X.Offset - 7, 0, newPos.Y.Offset - 7)
             end
         end
     end
@@ -695,7 +809,6 @@ if CONFIG.SHOW_GUI then
         dragging = false
     end
 
-    -- Connect drag events to title bar
     guiElements.mainFrame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             startDrag(input)
@@ -719,8 +832,8 @@ if CONFIG.SHOW_GUI then
     guiElements.mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     guiElements.shadow.BackgroundTransparency = 1
     local entranceTween = TweenService:Create(guiElements.mainFrame, TweenInfo.new(0.6, Enum.EasingStyle.Back), {
-        Size = UDim2.new(0, 420, 0, 350),
-        Position = UDim2.new(0.5, -210, 0.5, -175)
+        Size = UDim2.new(0, 420, 0, 420),
+        Position = UDim2.new(0.5, -210, 0.5, -210)
     })
     local shadowTween = TweenService:Create(guiElements.shadow, TweenInfo.new(0.6, Enum.EasingStyle.Back), {
         BackgroundTransparency = 0.7
@@ -745,26 +858,22 @@ if CONFIG.SHOW_GUI then
     addHoverEffect(guiElements.rareToggle, Color3.fromRGB(255, 185, 20), CONFIG.RARE_FISH_ONLY and Color3.fromRGB(255, 165, 0) or Color3.fromRGB(70, 130, 180))
     addHoverEffect(guiElements.closeBtn, Color3.fromRGB(240, 70, 70), Color3.fromRGB(220, 50, 50))
     addHoverEffect(guiElements.minBtn, Color3.fromRGB(255, 213, 27), Color3.fromRGB(255, 193, 7))
+    addHoverEffect(guiElements.saveWebhookBtn, Color3.fromRGB(90, 200, 120), Color3.fromRGB(70, 180, 100))
 end
 
 -- Setup fish detection
 setupFishDetection()
 
--- Auto-detect webhook URL from clipboard (if possible)
-local function tryAutoDetectWebhook()
-    -- This would require additional permissions, so just show instruction
+-- Auto-show instruction if no webhook
+task.spawn(function()
+    task.wait(2)
     if CONFIG.WEBHOOK_URL == "" then
         StarterGui:SetCore("SendNotification", {
-            Title = "⚠️ Webhook Setup Required";
-            Text = "Edit script dan masukkan Discord Webhook URL!";
+            Title = "ℹ️ Panduan Penggunaan";
+            Text = "Buka GUI, masukkan Webhook URL Discord, lalu klik 'Simpan Webhook'!";
             Duration = 8;
         })
     end
-end
-
-task.spawn(function() -- <-- DIPERBAIKI: Gunakan task.spawn
-    task.wait(2) -- <-- DIPERBAIKI: Gunakan task.wait
-    tryAutoDetectWebhook()
 end)
 
 -- Success notification
@@ -775,59 +884,23 @@ StarterGui:SetCore("SendNotification", {
 })
 
 -- Console messages
-print("🌊 ====================================")
+print("====================================")
 print("🐟 Fish It! Webhook Script - LOADED! 🦈")
-print("🌊 ====================================")
+print("====================================")
 print("📋 Game: Fish It! (ID: 121864768012064)")
 print("🔧 Executor: Delta Compatible")
-print("📡 Webhook: " .. (CONFIG.WEBHOOK_URL ~= "" and "✅ Configured" or "❌ Not Set"))
 print("🎯 Status: " .. (CONFIG.ENABLED and "🟢 Active" or "🔴 Inactive"))
-print("🌊 ====================================")
-
--- Instructions
-warn("🔥 === INSTRUKSI SETUP FISH IT! WEBHOOK ===")
-warn("1. 📝 Edit script ini dan ganti CONFIG.WEBHOOK_URL")
-warn("2. 🔗 Masukkan Discord Webhook URL lengkap")
-warn("3. ▶️ Jalankan script di Delta Executor")
-warn("4. 🎣 Mulai memancing di Fish It!")
-warn("5. 📱 Notifikasi akan muncul di Discord saat dapat ikan")
-warn("")
-warn("🦈 TIPS:")
-warn("- Toggle 'Hanya Rare/Shark' untuk filter ikan langka")
-warn("- Script mendeteksi Shark, Mythic, Secret, dan fish rare lainnya")
-warn("- GUI bisa di-drag dan di-minimize")
-warn("- Gunakan Test Webhook untuk cek koneksi")
-warn("")
-warn("🌊 Selamat memancing di Fish It! 🐟")
+print("====================================")
 
 -- Performance monitoring
-task.spawn(function() -- <-- DIPERBAIKI: Gunakan task.spawn
+task.spawn(function()
     while true do
-        task.wait(60) -- Check every minute -- <-- DIPERBAIKI: Gunakan task.wait
+        task.wait(60)
         if CONFIG.ENABLED and _G.FishItGUI and _G.FishItGUI.statusLabel then
-            -- Update status with performance info
             local currentTime = os.date("%H:%M")
             _G.FishItGUI.statusLabel.Text = "Status: 🟢 Aktif (" .. currentTime .. ")"
         end
     end
 end)
 
--- Auto-save config (in memory only, can't use localStorage in Claude artifacts)
-local function saveConfig()
-    -- In a real environment, you could save to DataStore or local file
-    -- For this script, config persists during session only
-    print("💾 Config saved to memory")
-end
-
--- Cleanup on script end
-game.Players.PlayerRemoving:Connect(function(leavingPlayer)
-    if leavingPlayer == player then
-        print("🌊 Fish It! Webhook script shutting down...")
-        saveConfig()
-        if _G.FishItGUI then
-            _G.FishItGUI = nil -- <-- DIPERBAIKI: Bersihkan referensi
-        end
-    end
-end)
-
-print("✅ Script Fish It! Webhook telah diperbaiki dan siap digunakan!")
+print("✅ Script siap digunakan! Masukkan Webhook URL Anda di GUI.")
