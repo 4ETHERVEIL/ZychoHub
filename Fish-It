@@ -14,7 +14,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 -- Configuration untuk Fish It!
 local CONFIG = {
-    WEBHOOK_URL = "", -- Masukkan Discord Webhook URL Anda di sini
+    WEBHOOK_URL = "https://discord.com/api/webhooks/1419176020736741508/kBcVsSpVh-6eHj5IzUz1eTnBlqKCCg-GMafUJWvkeHjoUnFO5iJ2GpRFa7H9LUG1sw3n", -- Masukkan Discord Webhook URL Anda di sini
     ENABLED = true,
     SHOW_GUI = true,
     NOTIFICATION_DURATION = 5,
