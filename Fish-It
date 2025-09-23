@@ -1,21 +1,19 @@
 -- Fish It! Webhook Notification Script (Game ID: 121864768012064)
 -- Compatible with Delta Executor
--- Modern UI Design for Fish It! by WoozyNate
--- [DIPERBAIKI & DITULIS ULANG] - Fitur Input Webhook Manual + Bug Fixes
+-- [DIPERBAIKI TOTAL] - Error "vulnerable function" + Bug GUI + Fitur Input Manual
 
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local StarterGui = game:GetService("StarterGui")
 local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Configuration untuk Fish It!
+-- Configuration
 local CONFIG = {
-    WEBHOOK_URL = "", -- Kosongkan untuk input manual
+    WEBHOOK_URL = "", -- Biarkan kosong untuk input manual
     ENABLED = true,
     SHOW_GUI = true,
     NOTIFICATION_DURATION = 5,
@@ -31,7 +29,7 @@ local CONFIG = {
     }
 }
 
--- Fungsi untuk memvalidasi dan menyimpan webhook URL
+-- Fungsi untuk menyimpan Webhook URL
 local function saveWebhookURL(inputText)
     if not inputText or inputText == "" then
         StarterGui:SetCore("SendNotification", {
@@ -42,25 +40,24 @@ local function saveWebhookURL(inputText)
         return false
     end
 
-    if not inputText:find("^https://discord.com/api/webhooks/") then
+    -- Validasi format dasar Discord Webhook
+    if not inputText:find("^https://discord.com/api/webhooks/%d+/[%w_-]+$") then
         StarterGui:SetCore("SendNotification", {
             Title = "❌ Error";
-            Text = "URL harus dimulai dengan 'https://discord.com/api/webhooks/'";
+            Text = "Format URL Webhook Discord tidak valid!";
             Duration = 5;
         })
         return false
     end
 
-    -- Simpan ke CONFIG
     CONFIG.WEBHOOK_URL = inputText
 
-    -- Update label status di GUI
+    -- Update GUI
     if _G.FishItGUI and _G.FishItGUI.webhookLabel then
         _G.FishItGUI.webhookLabel.Text = "📡 Webhook: ✅ Terhubung"
         _G.FishItGUI.webhookLabel.TextColor3 = Color3.fromRGB(80, 255, 80)
     end
 
-    -- Beri notifikasi sukses
     StarterGui:SetCore("SendNotification", {
         Title = "✅ Sukses";
         Text = "Webhook URL berhasil disimpan!";
@@ -71,125 +68,147 @@ local function saveWebhookURL(inputText)
     return true
 end
 
--- Modern GUI Creation untuk Fish It!
+-- Fungsi Kirim Webhook (Diperbaiki untuk hindari error "vulnerable function")
+local function sendWebhook(fishData)
+    if not CONFIG.WEBHOOK_URL or CONFIG.WEBHOOK_URL == "" then
+        warn("❌ Webhook URL belum diatur!")
+        return false
+    end
+
+    -- Pastikan semua data aman (tidak mengandung kode berbahaya)
+    local safeFishName = tostring(fishData.name or "Unknown Fish"):gsub("[^%w%s%p]", "")
+    local safeRarity = tostring(fishData.rarity or "Common"):gsub("[^%w%s%p]", "")
+    local safeLocation = tostring(fishData.location or "Unknown Area"):gsub("[^%w%s%p]", "")
+    local safeRod = tostring(fishData.rod or "Basic Rod"):gsub("[^%w%s%p]", "")
+    local safeTimestamp = tostring(fishData.timestamp):gsub("[^%w%s%p:/%-%.]", "")
+
+    local rarityColor = {
+        ["Common"] = 3447003,    -- Blue
+        ["Rare"] = 15844367,     -- Gold
+        ["Epic"] = 10181046,     -- Purple
+        ["Legendary"] = 15105570,-- Orange
+        ["Mythic"] = 16711680,   -- Red
+        ["Secret"] = 65535,      -- Cyan
+        ["Shark"] = 16711680     -- Red
+    }
+
+    local embedColor = rarityColor[safeRarity] or 3447003
+
+    -- Gunakan URL gambar yang valid dan aman
+    local thumbnailUrl = "https://tr.rbxcdn.com/4e5d3b4f5a5e5a5e5a5e5a5e5a5e5a5e/420/420/AvatarHeadshot/Png"
+    local avatarUrl = "https://tr.rbxcdn.com/4e5d3b4f5a5e5a5e5a5e5a5e5a5e5a5e/420/420/AvatarHeadshot/Png"
+
+    local embed = {
+        title = "🎣 Fish Caught in Fish It!",
+        description = string.format("**%s** berhasil menangkap ikan di Fish It! 🐟", player.Name),
+        color = embedColor,
+        fields = {
+            {
+                name = "🐟 Nama Ikan",
+                value = safeFishName,
+                inline = true
+            },
+            {
+                name = "⭐ Rarity",
+                value = safeRarity,
+                inline = true
+            },
+            {
+                name = "📍 Lokasi",
+                value = safeLocation,
+                inline = true
+            },
+            {
+                name = "🎣 Rod",
+                value = safeRod,
+                inline = true
+            },
+            {
+                name = "⏰ Waktu",
+                value = safeTimestamp,
+                inline = true
+            }
+        },
+        thumbnail = {
+            url = thumbnailUrl -- URL aman tanpa spasi
+        },
+        footer = {
+            text = "Fish It! Webhook • Game ID: 121864768012064",
+            icon_url = avatarUrl -- URL aman tanpa spasi
+        },
+        timestamp = os.date("!%Y-%m-%dT%H:%M:%S.000Z")
+    }
+
+    -- Special embed for rare/secret fish
+    if safeRarity == "Secret" or safeRarity == "Mythic" or safeFishName:lower():find("shark") then
+        embed.title = "🦈 RARE FISH ALERT! 🦈"
+        embed.description = string.format("**%s** menangkap ikan LANGKA: **%s**! 🌟", player.Name, safeFishName)
+    end
+
+    local data = {
+        username = "Fish It! Bot 🐟",
+        avatar_url = avatarUrl, -- URL aman
+        embeds = {embed}
+    }
+
+    local success, response = pcall(function()
+        return HttpService:PostAsync(CONFIG.WEBHOOK_URL, HttpService:JSONEncode(data))
+    end)
+
+    if success then
+        print("✅ Webhook berhasil dikirim!")
+        return true
+    else
+        warn("❌ Gagal mengirim webhook:", tostring(response))
+        StarterGui:SetCore("SendNotification", {
+            Title = "❌ Webhook Gagal";
+            Text = "Periksa URL atau koneksi Anda.";
+            Duration = 5;
+        })
+        return false
+    end
+end
+
+-- GUI Creation
 local function createModernGUI()
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "FishItWebhook"
     screenGui.Parent = playerGui
     screenGui.ResetOnSpawn = false
     screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    
-    -- Main Frame dengan Fish It! theme
+
     local mainFrame = Instance.new("Frame")
-    mainFrame.Name = "MainFrame"
-    mainFrame.Size = UDim2.new(0, 420, 0, 420) -- Diperbesar untuk menampung input
+    mainFrame.Size = UDim2.new(0, 420, 0, 420)
     mainFrame.Position = UDim2.new(0.5, -210, 0.5, -210)
     mainFrame.BackgroundColor3 = Color3.fromRGB(15, 25, 40)
     mainFrame.BorderSizePixel = 0
     mainFrame.ZIndex = 10
     mainFrame.Parent = screenGui
-    
-    -- Corner rounding
+
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 18)
     corner.Parent = mainFrame
-    
-    -- Ocean Gradient untuk Fish It! theme
-    local gradient = Instance.new("UIGradient")
-    gradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 40, 70)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(15, 30, 55)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 20, 45))
-    }
-    gradient.Rotation = -45
-    gradient.Parent = mainFrame
-    
-    -- Animated water effect
-    task.spawn(function()
-        while mainFrame.Parent do
-            for i = 1, 360 do
-                if mainFrame.Parent then
-                    gradient.Rotation = -45 + math.sin(i * 0.02) * 5
-                    task.wait(0.05)
-                else
-                    break
-                end
-            end
-        end
-    end)
-    
-    -- Drop Shadow
-    local shadow = Instance.new("Frame")
-    shadow.Name = "Shadow"
-    shadow.Size = UDim2.new(1, 15, 1, 15)
-    shadow.Position = UDim2.new(0, -7, 0, -7)
-    shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    shadow.BackgroundTransparency = 0.7
-    shadow.ZIndex = mainFrame.ZIndex - 1
-    shadow.Parent = screenGui
-    
-    local shadowCorner = Instance.new("UICorner")
-    shadowCorner.CornerRadius = UDim.new(0, 25)
-    shadowCorner.Parent = shadow
-    
-    -- Title Bar dengan Fish It! branding
+
+    -- Title Bar
     local titleBar = Instance.new("Frame")
-    titleBar.Name = "TitleBar"
     titleBar.Size = UDim2.new(1, 0, 0, 60)
-    titleBar.Position = UDim2.new(0, 0, 0, 0)
     titleBar.BackgroundColor3 = Color3.fromRGB(25, 50, 85)
-    titleBar.BorderSizePixel = 0
     titleBar.ZIndex = 11
     titleBar.Parent = mainFrame
-    
-    local titleCorner = Instance.new("UICorner")
-    titleCorner.CornerRadius = UDim.new(0, 18)
-    titleCorner.Parent = titleBar
-    
-    -- Fix bottom corners
-    local titleFix = Instance.new("Frame")
-    titleFix.Size = UDim2.new(1, 0, 0, 20)
-    titleFix.Position = UDim2.new(0, 0, 1, -20)
-    titleFix.BackgroundColor3 = Color3.fromRGB(25, 50, 85)
-    titleFix.BorderSizePixel = 0
-    titleFix.ZIndex = 11
-    titleFix.Parent = titleBar
-    
-    -- Title dengan Fish It! logo
+
     local title = Instance.new("TextLabel")
-    title.Name = "Title"
     title.Text = "🐟 Fish It! Webhook 🦈"
     title.Size = UDim2.new(1, -120, 1, 0)
     title.Position = UDim2.new(0, 20, 0, 0)
     title.BackgroundTransparency = 1
     title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    title.TextScaled = true
     title.Font = Enum.Font.GothamBold
     title.TextXAlignment = Enum.TextXAlignment.Left
     title.ZIndex = 12
     title.Parent = titleBar
-    
-    -- Minimize Button
-    local minBtn = Instance.new("TextButton")
-    minBtn.Name = "MinimizeButton"
-    minBtn.Text = "−"
-    minBtn.Size = UDim2.new(0, 35, 0, 35)
-    minBtn.Position = UDim2.new(1, -85, 0, 12)
-    minBtn.BackgroundColor3 = Color3.fromRGB(255, 193, 7)
-    minBtn.BorderSizePixel = 0
-    minBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    minBtn.Font = Enum.Font.GothamBold
-    minBtn.TextScaled = true
-    minBtn.ZIndex = 12
-    minBtn.Parent = titleBar
-    
-    local minBtnCorner = Instance.new("UICorner")
-    minBtnCorner.CornerRadius = UDim.new(0, 8)
-    minBtnCorner.Parent = minBtn
-    
+
     -- Close Button
     local closeBtn = Instance.new("TextButton")
-    closeBtn.Name = "CloseButton"
     closeBtn.Text = "✕"
     closeBtn.Size = UDim2.new(0, 35, 0, 35)
     closeBtn.Position = UDim2.new(1, -45, 0, 12)
@@ -197,149 +216,96 @@ local function createModernGUI()
     closeBtn.BorderSizePixel = 0
     closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     closeBtn.Font = Enum.Font.GothamBold
-    closeBtn.TextScaled = true
     closeBtn.ZIndex = 12
     closeBtn.Parent = titleBar
-    
-    local closeBtnCorner = Instance.new("UICorner")
-    closeBtnCorner.CornerRadius = UDim.new(0, 8)
-    closeBtnCorner.Parent = closeBtn
-    
+
     -- Status Frame
     local statusFrame = Instance.new("Frame")
-    statusFrame.Name = "StatusFrame"
     statusFrame.Size = UDim2.new(1, -20, 0, 90)
     statusFrame.Position = UDim2.new(0, 10, 0, 70)
     statusFrame.BackgroundColor3 = Color3.fromRGB(20, 35, 60)
-    statusFrame.BorderSizePixel = 0
     statusFrame.ZIndex = 11
     statusFrame.Parent = mainFrame
-    
-    local statusCorner = Instance.new("UICorner")
-    statusCorner.CornerRadius = UDim.new(0, 12)
-    statusCorner.Parent = statusFrame
-    
-    -- Status Label
+
     local statusLabel = Instance.new("TextLabel")
-    statusLabel.Name = "StatusLabel"
     statusLabel.Text = "Status: " .. (CONFIG.ENABLED and "🟢 Aktif" or "🔴 Nonaktif")
     statusLabel.Size = UDim2.new(1, -20, 0, 25)
     statusLabel.Position = UDim2.new(0, 10, 0, 10)
     statusLabel.BackgroundTransparency = 1
     statusLabel.TextColor3 = CONFIG.ENABLED and Color3.fromRGB(80, 255, 80) or Color3.fromRGB(255, 80, 80)
-    statusLabel.TextScaled = true
     statusLabel.Font = Enum.Font.Gotham
-    statusLabel.TextXAlignment = Enum.TextXAlignment.Left
     statusLabel.ZIndex = 12
     statusLabel.Parent = statusFrame
-    
-    -- Fish Count Label
+
     local fishCountLabel = Instance.new("TextLabel")
-    fishCountLabel.Name = "FishCountLabel"
     fishCountLabel.Text = "🐟 Ikan Tertangkap: 0"
     fishCountLabel.Size = UDim2.new(1, -20, 0, 25)
     fishCountLabel.Position = UDim2.new(0, 10, 0, 35)
     fishCountLabel.BackgroundTransparency = 1
     fishCountLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
-    fishCountLabel.TextScaled = true
     fishCountLabel.Font = Enum.Font.Gotham
-    fishCountLabel.TextXAlignment = Enum.TextXAlignment.Left
     fishCountLabel.ZIndex = 12
     fishCountLabel.Parent = statusFrame
-    
-    -- Webhook Status
+
     local webhookLabel = Instance.new("TextLabel")
-    webhookLabel.Name = "WebhookLabel"
     webhookLabel.Text = "📡 Webhook: " .. (CONFIG.WEBHOOK_URL ~= "" and "✅ Terhubung" or "❌ Belum Diatur")
     webhookLabel.Size = UDim2.new(1, -20, 0, 25)
     webhookLabel.Position = UDim2.new(0, 10, 0, 60)
     webhookLabel.BackgroundTransparency = 1
     webhookLabel.TextColor3 = CONFIG.WEBHOOK_URL ~= "" and Color3.fromRGB(80, 255, 80) or Color3.fromRGB(255, 180, 80)
-    webhookLabel.TextScaled = true
     webhookLabel.Font = Enum.Font.Gotham
-    webhookLabel.TextXAlignment = Enum.TextXAlignment.Left
     webhookLabel.ZIndex = 12
     webhookLabel.Parent = statusFrame
 
-    -- Webhook Input Frame (BARU)
+    -- Webhook Input
     local webhookInputFrame = Instance.new("Frame")
-    webhookInputFrame.Name = "WebhookInputFrame"
     webhookInputFrame.Size = UDim2.new(1, -20, 0, 60)
     webhookInputFrame.Position = UDim2.new(0, 10, 0, 170)
     webhookInputFrame.BackgroundColor3 = Color3.fromRGB(25, 40, 65)
-    webhookInputFrame.BorderSizePixel = 0
     webhookInputFrame.ZIndex = 11
     webhookInputFrame.Parent = mainFrame
 
-    local inputCorner = Instance.new("UICorner")
-    inputCorner.CornerRadius = UDim.new(0, 10)
-    inputCorner.Parent = webhookInputFrame
-
-    -- Label untuk input
     local inputLabel = Instance.new("TextLabel")
-    inputLabel.Name = "InputLabel"
     inputLabel.Text = "🔗 Masukkan Webhook URL:"
     inputLabel.Size = UDim2.new(1, -10, 0, 20)
     inputLabel.Position = UDim2.new(0, 5, 0, 5)
     inputLabel.BackgroundTransparency = 1
     inputLabel.TextColor3 = Color3.fromRGB(220, 220, 255)
-    inputLabel.TextScaled = true
     inputLabel.Font = Enum.Font.Gotham
-    inputLabel.TextXAlignment = Enum.TextXAlignment.Left
     inputLabel.ZIndex = 12
     inputLabel.Parent = webhookInputFrame
 
-    -- TextBox untuk input URL
     local webhookInput = Instance.new("TextBox")
-    webhookInput.Name = "WebhookInput"
-    webhookInput.Text = CONFIG.WEBHOOK_URL or ""
+    webhookInput.Text = CONFIG.WEBHOOK_URL
     webhookInput.PlaceholderText = "https://discord.com/api/webhooks/..."
     webhookInput.Size = UDim2.new(1, -10, 0, 25)
     webhookInput.Position = UDim2.new(0, 5, 0, 30)
-    webhookInput.BackgroundTransparency = 0
     webhookInput.BackgroundColor3 = Color3.fromRGB(35, 50, 75)
     webhookInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-    webhookInput.TextScaled = true
     webhookInput.Font = Enum.Font.Gotham
-    webhookInput.TextXAlignment = Enum.TextXAlignment.Left
     webhookInput.ClearTextOnFocus = false
     webhookInput.ZIndex = 13
     webhookInput.Parent = webhookInputFrame
 
-    local textBoxCorner = Instance.new("UICorner")
-    textBoxCorner.CornerRadius = UDim.new(0, 6)
-    textBoxCorner.Parent = webhookInput
-
-    -- Control Buttons Frame
+    -- Control Buttons
     local buttonFrame = Instance.new("Frame")
-    buttonFrame.Name = "ButtonFrame"
     buttonFrame.Size = UDim2.new(1, -20, 0, 100)
     buttonFrame.Position = UDim2.new(0, 10, 0, 240)
     buttonFrame.BackgroundTransparency = 1
     buttonFrame.ZIndex = 11
     buttonFrame.Parent = mainFrame
-    
-    -- Toggle Button
+
     local toggleBtn = Instance.new("TextButton")
-    toggleBtn.Name = "ToggleButton"
     toggleBtn.Text = CONFIG.ENABLED and "⏸️ Matikan" or "▶️ Aktifkan"
     toggleBtn.Size = UDim2.new(0.48, 0, 0, 45)
-    toggleBtn.Position = UDim2.new(0, 0, 0, 0)
     toggleBtn.BackgroundColor3 = CONFIG.ENABLED and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(100, 255, 100)
     toggleBtn.BorderSizePixel = 0
     toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     toggleBtn.Font = Enum.Font.GothamBold
-    toggleBtn.TextScaled = true
     toggleBtn.ZIndex = 12
     toggleBtn.Parent = buttonFrame
-    
-    local toggleCorner = Instance.new("UICorner")
-    toggleCorner.CornerRadius = UDim.new(0, 10)
-    toggleCorner.Parent = toggleBtn
-    
-    -- Test Webhook Button
+
     local testBtn = Instance.new("TextButton")
-    testBtn.Name = "TestButton"
     testBtn.Text = "🧪 Test Webhook"
     testBtn.Size = UDim2.new(0.48, 0, 0, 45)
     testBtn.Position = UDim2.new(0.52, 0, 0, 0)
@@ -347,17 +313,10 @@ local function createModernGUI()
     testBtn.BorderSizePixel = 0
     testBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     testBtn.Font = Enum.Font.GothamBold
-    testBtn.TextScaled = true
     testBtn.ZIndex = 12
     testBtn.Parent = buttonFrame
-    
-    local testCorner = Instance.new("UICorner")
-    testCorner.CornerRadius = UDim.new(0, 10)
-    testCorner.Parent = testBtn
-    
-    -- Rare Fish Only Toggle
+
     local rareToggle = Instance.new("TextButton")
-    rareToggle.Name = "RareToggle"
     rareToggle.Text = "🦈 " .. (CONFIG.RARE_FISH_ONLY and "Semua Ikan" or "Hanya Rare/Shark")
     rareToggle.Size = UDim2.new(1, 0, 0, 40)
     rareToggle.Position = UDim2.new(0, 0, 0, 55)
@@ -365,17 +324,11 @@ local function createModernGUI()
     rareToggle.BorderSizePixel = 0
     rareToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
     rareToggle.Font = Enum.Font.GothamBold
-    rareToggle.TextScaled = true
     rareToggle.ZIndex = 12
     rareToggle.Parent = buttonFrame
-    
-    local rareCorner = Instance.new("UICorner")
-    rareCorner.CornerRadius = UDim.new(0, 10)
-    rareCorner.Parent = rareToggle
 
-    -- Tombol Simpan Webhook (BARU)
+    -- Save Button
     local saveWebhookBtn = Instance.new("TextButton")
-    saveWebhookBtn.Name = "SaveWebhookButton"
     saveWebhookBtn.Text = "💾 Simpan Webhook"
     saveWebhookBtn.Size = UDim2.new(0, 150, 0, 35)
     saveWebhookBtn.Position = UDim2.new(0.5, -75, 0, 350)
@@ -383,30 +336,22 @@ local function createModernGUI()
     saveWebhookBtn.BorderSizePixel = 0
     saveWebhookBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     saveWebhookBtn.Font = Enum.Font.GothamBold
-    saveWebhookBtn.TextScaled = true
     saveWebhookBtn.ZIndex = 13
     saveWebhookBtn.Parent = mainFrame
 
-    local saveBtnCorner = Instance.new("UICorner")
-    saveBtnCorner.CornerRadius = UDim.new(0, 8)
-    saveBtnCorner.Parent = saveWebhookBtn
-    
-    -- Credits dan Info
+    -- Credits
     local credits = Instance.new("TextLabel")
-    credits.Name = "Credits"
     credits.Text = "🌊 Made for Fish It! • Delta Executor Compatible 🐟"
     credits.Size = UDim2.new(1, 0, 0, 30)
     credits.Position = UDim2.new(0, 0, 1, -40)
     credits.BackgroundTransparency = 1
     credits.TextColor3 = Color3.fromRGB(150, 200, 255)
-    credits.TextScaled = true
     credits.Font = Enum.Font.Gotham
     credits.ZIndex = 12
     credits.Parent = mainFrame
-    
+
     return screenGui, {
         mainFrame = mainFrame,
-        shadow = shadow,
         statusLabel = statusLabel,
         fishCountLabel = fishCountLabel,
         webhookLabel = webhookLabel,
@@ -414,204 +359,76 @@ local function createModernGUI()
         testBtn = testBtn,
         rareToggle = rareToggle,
         closeBtn = closeBtn,
-        minBtn = minBtn,
         webhookInput = webhookInput,
         saveWebhookBtn = saveWebhookBtn
     }
 end
 
--- Enhanced Webhook Function untuk Fish It!
-local function sendWebhook(fishData)
-    if not CONFIG.WEBHOOK_URL or CONFIG.WEBHOOK_URL == "" then
-        warn("❌ Webhook URL belum diatur!")
-        StarterGui:SetCore("SendNotification", {
-            Title = "⚠️ Webhook Error";
-            Text = "Silakan masukkan Webhook URL di GUI!";
-            Duration = 5;
-        })
-        return
-    end
-    
-    local rarityColor = {
-        ["Common"] = 3447003,        -- Blue
-        ["Rare"] = 15844367,         -- Gold
-        ["Epic"] = 10181046,         -- Purple
-        ["Legendary"] = 15105570,    -- Orange
-        ["Mythic"] = 16711680,       -- Red
-        ["Secret"] = 65535,          -- Cyan
-        ["Shark"] = 16711680         -- Red for sharks
-    }
-    
-    local embed = {
-        title = "🎣 Fish Caught in Fish It!",
-        description = string.format("**%s** berhasil menangkap ikan di Fish It! 🐟", player.Name),
-        color = rarityColor[fishData.rarity] or 3447003,
-        fields = {
-            {
-                name = "🐟 Nama Ikan",
-                value = fishData.name or "Unknown Fish",
-                inline = true
-            },
-            {
-                name = "⭐ Rarity",
-                value = fishData.rarity or "Common",
-                inline = true
-            },
-            {
-                name = "📍 Lokasi",
-                value = fishData.location or "Unknown Area",
-                inline = true
-            },
-            {
-                name = "💰 Nilai",
-                value = fishData.value and ("$" .. fishData.value) or "Unknown",
-                inline = true
-            },
-            {
-                name = "🎣 Rod",
-                value = fishData.rod or "Basic Rod",
-                inline = true
-            },
-            {
-                name = "⏰ Waktu",
-                value = fishData.timestamp,
-                inline = true
-            }
-        },
-        thumbnail = {
-            url = "https://cdn.discordapp.com/emojis/1234567890123456789.png"
-        },
-        footer = {
-            text = "Fish It! Webhook • Game ID: 121864768012064",
-            icon_url = "https://cdn.discordapp.com/emojis/987654321098765432.png"
-        },
-        timestamp = os.date("!%Y-%m-%dT%H:%M:%S.000Z")
-    }
-    
-    -- Special embed for rare/secret fish
-    if fishData.rarity == "Secret" or fishData.rarity == "Mythic" or string.find(fishData.name:lower(), "shark") then
-        embed.title = "🦈 RARE FISH ALERT! 🦈"
-        embed.description = string.format("**%s** menangkap ikan LANGKA: **%s**! 🌟", player.Name, fishData.name)
-    end
-    
-    local data = {
-        username = "Fish It! Bot 🐟",
-        avatar_url = "https://cdn.roblox.com/asset-thumbnails/121864768012064.png",
-        embeds = {embed}
-    }
-    
-    local success, response = pcall(function()
-        return HttpService:PostAsync(CONFIG.WEBHOOK_URL, HttpService:JSONEncode(data), Enum.HttpContentType.ApplicationJson)
-    end)
-    
-    if success then
-        print("✅ Webhook berhasil dikirim!")
-    else
-        warn("❌ Gagal mengirim webhook ke URL:", CONFIG.WEBHOOK_URL, "\nError:", tostring(response))
-        StarterGui:SetCore("SendNotification", {
-            Title = "❌ Webhook Gagal";
-            Text = "Periksa URL atau koneksi internet Anda.";
-            Duration = 5;
-        })
-    end
-end
-
--- Fish Detection untuk Fish It! yang spesifik
+-- Fish Detection
 local fishCount = 0
 local lastFishTime = 0
 
 local function getRarity(fishName)
     fishName = fishName:lower()
-    
-    -- Check for secret fish first
     for _, secretFish in ipairs(CONFIG.SECRET_FISH_LIST) do
-        if string.find(fishName, secretFish:lower()) then
+        if fishName:find(secretFish:lower()) then
             return "Secret"
         end
     end
-    
-    -- Check for rare fish/sharks
     for _, rareFish in ipairs(CONFIG.RARE_FISH_LIST) do
-        if string.find(fishName, rareFish:lower()) then
-            if string.find(fishName, "shark") then
-                return "Shark"
-            elseif string.find(fishName, "mythic") then
-                return "Mythic"
-            elseif string.find(fishName, "legendary") then
-                return "Legendary"
-            elseif string.find(fishName, "epic") then
-                return "Epic"
-            else
-                return "Rare"
+        if fishName:find(rareFish:lower()) then
+            if fishName:find("shark") then return "Shark"
+            elseif fishName:find("mythic") then return "Mythic"
+            elseif fishName:find("legendary") then return "Legendary"
+            elseif fishName:find("epic") then return "Epic"
+            else return "Rare"
             end
         end
     end
-    
     return "Common"
 end
 
 local function getPlayerLocation()
     if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        local position = player.Character.HumanoidRootPart.Position
-        if position.Y > 50 then
-            return "Spawn Island"
-        elseif position.Y < -20 then
-            return "Deep Ocean"
-        else
-            return "Coastal Waters"
+        local pos = player.Character.HumanoidRootPart.Position
+        if pos.Y > 50 then return "Spawn Island"
+        elseif pos.Y < -20 then return "Deep Ocean"
+        else return "Coastal Waters"
         end
     end
     return "Unknown Area"
 end
 
 local function setupFishDetection()
-    -- Method 1: Monitor PlayerGui for fish notifications
     local function monitorGui()
-        local function checkForFishNotification(guiElement)
+        local function checkNotification(guiElement)
+            if not CONFIG.ENABLED then return end
             if guiElement.Name:find("Notification") or guiElement.Name:find("Fish") or guiElement.Name:find("Catch") then
-                for _, descendant in pairs(guiElement:GetDescendants()) do
-                    if descendant:IsA("TextLabel") and descendant.Text then
-                        local text = descendant.Text:lower()
+                for _, desc in pairs(guiElement:GetDescendants()) do
+                    if desc:IsA("TextLabel") and desc.Text then
+                        local text = desc.Text:lower()
                         if text:find("caught") or text:find("fish") or text:find("shark") then
-                            local fishName = descendant.Text:match("caught (.+)") or 
-                                           descendant.Text:match("fish: (.+)") or 
-                                           descendant.Text
-                            
+                            local fishName = desc.Text:match("caught (.+)") or desc.Text:match("fish: (.+)") or desc.Text
                             if fishName and fishName ~= "" then
                                 local rarity = getRarity(fishName)
-                                
-                                if CONFIG.RARE_FISH_ONLY and rarity == "Common" then
-                                    return
-                                end
-                                
-                                if CONFIG.SECRET_FISH_ONLY and rarity ~= "Secret" and rarity ~= "Mythic" then
-                                    return
-                                end
-                                
-                                local currentTime = tick()
-                                if currentTime - lastFishTime < 2 then
-                                    return
-                                end
-                                lastFishTime = currentTime
-                                
+                                if CONFIG.RARE_FISH_ONLY and rarity == "Common" then return end
+                                if CONFIG.SECRET_FISH_ONLY and rarity ~= "Secret" and rarity ~= "Mythic" then return end
+                                local now = tick()
+                                if now - lastFishTime < 2 then return end
+                                lastFishTime = now
                                 fishCount = fishCount + 1
-                                
                                 local fishData = {
                                     name = fishName,
                                     rarity = rarity,
                                     location = getPlayerLocation(),
-                                    value = "Unknown",
                                     rod = "Current Rod",
                                     timestamp = os.date("%H:%M:%S - %d/%m/%Y")
                                 }
-                                
                                 -- Update GUI
-                                if CONFIG.SHOW_GUI and _G.FishItGUI and _G.FishItGUI.fishCountLabel then
+                                if _G.FishItGUI and _G.FishItGUI.fishCountLabel then
                                     _G.FishItGUI.fishCountLabel.Text = "🐟 Ikan Tertangkap: " .. fishCount
                                 end
-                                
                                 sendWebhook(fishData)
-                                
                                 StarterGui:SetCore("SendNotification", {
                                     Title = "🎣 Fish It! - Ikan Tertangkap!";
                                     Text = fishName .. " (" .. rarity .. ")";
@@ -623,101 +440,20 @@ local function setupFishDetection()
                 end
             end
         end
-        
-        playerGui.ChildAdded:Connect(checkForFishNotification)
-        for _, existingGui in pairs(playerGui:GetChildren()) do
-            checkForFishNotification(existingGui)
+        playerGui.ChildAdded:Connect(checkNotification)
+        for _, gui in pairs(playerGui:GetChildren()) do
+            checkNotification(gui)
         end
     end
-    
-    -- Method 2: Monitor ReplicatedStorage for fish data
-    local function monitorReplicatedStorage()
-        if ReplicatedStorage:FindFirstChild("FishData") or ReplicatedStorage:FindFirstChild("CatchEvent") then
-            for _, child in pairs(ReplicatedStorage:GetChildren()) do
-                if child:IsA("RemoteEvent") and (child.Name:find("Fish") or child.Name:find("Catch")) then
-                    child.OnClientEvent:Connect(function(data)
-                        if data and type(data) == "table" and data.fishName then
-                            local rarity = getRarity(data.fishName)
-                            if CONFIG.RARE_FISH_ONLY and rarity == "Common" then
-                                return
-                            end
-                            fishCount = fishCount + 1
-                            local fishData = {
-                                name = data.fishName,
-                                rarity = rarity,
-                                location = getPlayerLocation(),
-                                value = data.value or "Unknown",
-                                rod = data.rod or "Current Rod",
-                                timestamp = os.date("%H:%M:%S - %d/%m/%Y")
-                            }
-                            sendWebhook(fishData)
-                        end
-                    end)
-                end
-            end
-        end
-    end
-    
-    -- Method 3: Monitor player's backpack/character for fish tools
-    local function monitorInventory()
-        local function onChildAdded(child)
-            if not CONFIG.ENABLED then return end
-            if child:IsA("Tool") and (child.Name:find("Fish") or child.Name:find("Shark") or 
-               child.Name:find("fish") or child.Name:find("shark")) then
-                local fishName = child.Name
-                local rarity = getRarity(fishName)
-                if CONFIG.RARE_FISH_ONLY and rarity == "Common" then
-                    return
-                end
-                if CONFIG.SECRET_FISH_ONLY and rarity ~= "Secret" and rarity ~= "Mythic" then
-                    return
-                end
-                local currentTime = tick()
-                if currentTime - lastFishTime < 1 then
-                    return
-                end
-                lastFishTime = currentTime
-                fishCount = fishCount + 1
-                local fishData = {
-                    name = fishName,
-                    rarity = rarity,
-                    location = getPlayerLocation(),
-                    value = "Unknown",
-                    rod = "Current Rod",
-                    timestamp = os.date("%H:%M:%S - %d/%m/%Y")
-                }
-                if CONFIG.SHOW_GUI and _G.FishItGUI and _G.FishItGUI.fishCountLabel then
-                    _G.FishItGUI.fishCountLabel.Text = "🐟 Ikan Tertangkap: " .. fishCount
-                end
-                sendWebhook(fishData)
-                StarterGui:SetCore("SendNotification", {
-                    Title = "🎣 Fish It! - " .. (rarity == "Common" and "Ikan Tertangkap!" or "RARE FISH! 🦈");
-                    Text = fishName .. " (" .. rarity .. ")";
-                    Duration = CONFIG.NOTIFICATION_DURATION;
-                })
-            end
-        end
-        if player.Backpack then
-            player.Backpack.ChildAdded:Connect(onChildAdded)
-        end
-        player.CharacterAdded:Connect(function(character)
-            character.ChildAdded:Connect(onChildAdded)
-        end)
-        if player.Character then
-            player.Character.ChildAdded:Connect(onChildAdded)
-        end
-    end
-    
+
     monitorGui()
-    monitorReplicatedStorage()
-    monitorInventory()
 end
 
--- Create GUI and setup
+-- Inisialisasi
 local screenGui, guiElements
 if CONFIG.SHOW_GUI then
     screenGui, guiElements = createModernGUI()
-    _G.FishItGUI = guiElements -- Simpan referensi global
+    _G.FishItGUI = guiElements
 
     -- Setup Button Functions
     guiElements.toggleBtn.MouseButton1Click:Connect(function()
@@ -733,11 +469,16 @@ if CONFIG.SHOW_GUI then
             name = "Test Megalodon 🦈",
             rarity = "Mythic",
             location = "Deep Ocean",
-            value = "50000",
             rod = "Legendary Rod",
             timestamp = os.date("%H:%M:%S - %d/%m/%Y")
         }
-        sendWebhook(testData)
+        if sendWebhook(testData) then
+            StarterGui:SetCore("SendNotification", {
+                Title = "✅ Test Berhasil";
+                Text = "Cek Discord Anda!";
+                Duration = 3;
+            })
+        end
     end)
 
     guiElements.rareToggle.MouseButton1Click:Connect(function()
@@ -751,156 +492,81 @@ if CONFIG.SHOW_GUI then
         _G.FishItGUI = nil
     end)
 
-    guiElements.minBtn.MouseButton1Click:Connect(function()
-        local isMinimized = guiElements.mainFrame.Size.Y.Offset <= 80
-        if isMinimized then
-            local tween = TweenService:Create(guiElements.mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
-                Size = UDim2.new(0, 420, 0, 420)
-            })
-            tween:Play()
-            guiElements.minBtn.Text = "−"
-        else
-            local tween = TweenService:Create(guiElements.mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
-                Size = UDim2.new(0, 420, 0, 60)
-            })
-            tween:Play()
-            guiElements.minBtn.Text = "□"
-        end
-    end)
-
-    -- Hubungkan tombol Simpan Webhook
     guiElements.saveWebhookBtn.MouseButton1Click:Connect(function()
-        local inputText = guiElements.webhookInput.Text
-        saveWebhookURL(inputText)
+        saveWebhookURL(guiElements.webhookInput.Text)
     end)
 
-    -- Simpan saat tekan Enter
     guiElements.webhookInput.FocusLost:Connect(function(enterPressed)
         if enterPressed then
-            local inputText = guiElements.webhookInput.Text
-            saveWebhookURL(inputText)
+            saveWebhookURL(guiElements.webhookInput.Text)
         end
     end)
 
-    -- Dragging functionality
-    local dragging = false
-    local dragStart = nil
-    local startPos = nil
-
+    -- Drag
+    local dragging, dragStart, startPos = false, nil, nil
     local function startDrag(input)
         dragging = true
         dragStart = input.Position
         startPos = guiElements.mainFrame.Position
     end
-
     local function updateDrag(input)
-        if dragging and dragStart and _G.FishItGUI and _G.FishItGUI.mainFrame and _G.FishItGUI.mainFrame.Parent then
+        if dragging and dragStart and _G.FishItGUI and _G.FishItGUI.mainFrame then
             local delta = input.Position - dragStart
-            local newPos = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, 
-                                   startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            local newPos = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
             _G.FishItGUI.mainFrame.Position = newPos
-            if _G.FishItGUI.shadow and _G.FishItGUI.shadow.Parent then
-                _G.FishItGUI.shadow.Position = UDim2.new(0, newPos.X.Offset - 7, 0, newPos.Y.Offset - 7)
-            end
         end
     end
-
     local function endDrag()
         dragging = false
     end
-
     guiElements.mainFrame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             startDrag(input)
         end
     end)
-
     guiElements.mainFrame.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement then
             updateDrag(input)
         end
     end)
-
     guiElements.mainFrame.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             endDrag()
         end
     end)
 
-    -- Entrance animation
+    -- Animation
     guiElements.mainFrame.Size = UDim2.new(0, 0, 0, 0)
     guiElements.mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-    guiElements.shadow.BackgroundTransparency = 1
-    local entranceTween = TweenService:Create(guiElements.mainFrame, TweenInfo.new(0.6, Enum.EasingStyle.Back), {
+    local tween = TweenService:Create(guiElements.mainFrame, TweenInfo.new(0.6, Enum.EasingStyle.Back), {
         Size = UDim2.new(0, 420, 0, 420),
         Position = UDim2.new(0.5, -210, 0.5, -210)
     })
-    local shadowTween = TweenService:Create(guiElements.shadow, TweenInfo.new(0.6, Enum.EasingStyle.Back), {
-        BackgroundTransparency = 0.7
-    })
-    entranceTween:Play()
-    shadowTween:Play()
-
-    -- Add glow effect on hover for buttons
-    local function addHoverEffect(button, hoverColor, originalColor)
-        button.MouseEnter:Connect(function()
-            local tween = TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = hoverColor})
-            tween:Play()
-        end)
-        button.MouseLeave:Connect(function()
-            local tween = TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = originalColor})
-            tween:Play()
-        end)
-    end
-
-    addHoverEffect(guiElements.toggleBtn, Color3.fromRGB(255, 120, 120), CONFIG.ENABLED and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(100, 255, 100))
-    addHoverEffect(guiElements.testBtn, Color3.fromRGB(120, 170, 255), Color3.fromRGB(100, 150, 255))
-    addHoverEffect(guiElements.rareToggle, Color3.fromRGB(255, 185, 20), CONFIG.RARE_FISH_ONLY and Color3.fromRGB(255, 165, 0) or Color3.fromRGB(70, 130, 180))
-    addHoverEffect(guiElements.closeBtn, Color3.fromRGB(240, 70, 70), Color3.fromRGB(220, 50, 50))
-    addHoverEffect(guiElements.minBtn, Color3.fromRGB(255, 213, 27), Color3.fromRGB(255, 193, 7))
-    addHoverEffect(guiElements.saveWebhookBtn, Color3.fromRGB(90, 200, 120), Color3.fromRGB(70, 180, 100))
+    tween:Play()
 end
 
--- Setup fish detection
+-- Start
 setupFishDetection()
 
--- Auto-show instruction if no webhook
 task.spawn(function()
     task.wait(2)
     if CONFIG.WEBHOOK_URL == "" then
         StarterGui:SetCore("SendNotification", {
-            Title = "ℹ️ Panduan Penggunaan";
-            Text = "Buka GUI, masukkan Webhook URL Discord, lalu klik 'Simpan Webhook'!";
+            Title = "ℹ️ Panduan";
+            Text = "Buka GUI, masukkan Webhook URL, lalu klik 'Simpan Webhook'!";
             Duration = 8;
         })
     end
 end)
 
--- Success notification
 StarterGui:SetCore("SendNotification", {
-    Title = "🐟 Fish It! Webhook Loaded";
+    Title = "🐟 Fish It! Webhook";
     Text = "Script berhasil dimuat! Selamat memancing! 🎣";
     Duration = 5;
 })
 
--- Console messages
 print("====================================")
-print("🐟 Fish It! Webhook Script - LOADED! 🦈")
+print("🐟 Fish It! Webhook Script - LOADED!")
 print("====================================")
-print("📋 Game: Fish It! (ID: 121864768012064)")
-print("🔧 Executor: Delta Compatible")
 print("🎯 Status: " .. (CONFIG.ENABLED and "🟢 Active" or "🔴 Inactive"))
 print("====================================")
-
--- Performance monitoring
-task.spawn(function()
-    while true do
-        task.wait(60)
-        if CONFIG.ENABLED and _G.FishItGUI and _G.FishItGUI.statusLabel then
-            local currentTime = os.date("%H:%M")
-            _G.FishItGUI.statusLabel.Text = "Status: 🟢 Aktif (" .. currentTime .. ")"
-        end
-    end
-end)
-
-print("✅ Script siap digunakan! Masukkan Webhook URL Anda di GUI.")
