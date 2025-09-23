@@ -1,6 +1,7 @@
 -- Fish It! Webhook Notification Script (Game ID: 121864768012064)
 -- Compatible with Delta Executor
 -- Modern UI Design for Fish It! by WoozyNate
+-- [DIPERBAIKI OLEH AI] - Perbaikan referensi GUI, error handling, dan task scheduling.
 
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
@@ -65,12 +66,12 @@ local function createModernGUI()
     gradient.Parent = mainFrame
     
     -- Animated water effect
-    spawn(function()
+    task.spawn(function() -- <-- DIPERBAIKI: Gunakan task.spawn
         while mainFrame.Parent do
             for i = 1, 360 do
                 if mainFrame.Parent then
                     gradient.Rotation = -45 + math.sin(i * 0.02) * 5
-                    wait(0.05)
+                    task.wait(0.05) -- <-- DIPERBAIKI: Gunakan task.wait
                 else
                     break
                 end
@@ -393,7 +394,7 @@ local function sendWebhook(fishData)
     if success then
         print("✅ Webhook berhasil dikirim!")
     else
-        warn("❌ Gagal mengirim webhook:", response)
+        warn("❌ Gagal mengirim webhook ke URL:", CONFIG.WEBHOOK_URL, "\nError:", tostring(response)) -- <-- DIPERBAIKI: Tambahkan detail error
     end
 end
 
@@ -449,10 +450,10 @@ end
 local function setupFishDetection()
     -- Method 1: Monitor PlayerGui for fish notifications
     local function monitorGui()
-        local function checkForFishNotification(gui)
-            if gui.Name:find("Notification") or gui.Name:find("Fish") or gui.Name:find("Catch") then
+        local function checkForFishNotification(guiElement)
+            if guiElement.Name:find("Notification") or guiElement.Name:find("Fish") or guiElement.Name:find("Catch") then
                 -- Look for text labels that might contain fish info
-                for _, descendant in pairs(gui:GetDescendants()) do
+                for _, descendant in pairs(guiElement:GetDescendants()) do
                     if descendant:IsA("TextLabel") and descendant.Text then
                         local text = descendant.Text:lower()
                         if text:find("caught") or text:find("fish") or text:find("shark") then
@@ -492,8 +493,8 @@ local function setupFishDetection()
                                 }
                                 
                                 -- Update GUI
-                                if CONFIG.SHOW_GUI and gui then
-                                    gui.fishCountLabel.Text = "🐟 Ikan Tertangkap: " .. fishCount
+                                if CONFIG.SHOW_GUI and _G.FishItGUI and _G.FishItGUI.fishCountLabel then -- <-- DIPERBAIKI: Gunakan referensi global
+                                    _G.FishItGUI.fishCountLabel.Text = "🐟 Ikan Tertangkap: " .. fishCount
                                 end
                                 
                                 -- Send webhook
@@ -527,13 +528,10 @@ local function setupFishDetection()
                     child.OnClientEvent:Connect(function(data)
                         if data and type(data) == "table" and data.fishName then
                             local rarity = getRarity(data.fishName)
-                            
                             if CONFIG.RARE_FISH_ONLY and rarity == "Common" then
                                 return
                             end
-                            
                             fishCount = fishCount + 1
-                            
                             local fishData = {
                                 name = data.fishName,
                                 rarity = rarity,
@@ -542,7 +540,6 @@ local function setupFishDetection()
                                 rod = data.rod or "Current Rod",
                                 timestamp = os.date("%H:%M:%S - %d/%m/%Y")
                             }
-                            
                             sendWebhook(fishData)
                         end
                     end)
@@ -555,30 +552,23 @@ local function setupFishDetection()
     local function monitorInventory()
         local function onChildAdded(child)
             if not CONFIG.ENABLED then return end
-            
             if child:IsA("Tool") and (child.Name:find("Fish") or child.Name:find("Shark") or 
                child.Name:find("fish") or child.Name:find("shark")) then
-                
                 local fishName = child.Name
                 local rarity = getRarity(fishName)
-                
                 if CONFIG.RARE_FISH_ONLY and rarity == "Common" then
                     return
                 end
-                
                 if CONFIG.SECRET_FISH_ONLY and rarity ~= "Secret" and rarity ~= "Mythic" then
                     return
                 end
-                
                 -- Prevent duplicate detection
                 local currentTime = tick()
                 if currentTime - lastFishTime < 1 then
                     return
                 end
                 lastFishTime = currentTime
-                
                 fishCount = fishCount + 1
-                
                 local fishData = {
                     name = fishName,
                     rarity = rarity,
@@ -587,14 +577,11 @@ local function setupFishDetection()
                     rod = "Current Rod",
                     timestamp = os.date("%H:%M:%S - %d/%m/%Y")
                 }
-                
                 -- Update GUI
-                if CONFIG.SHOW_GUI and gui and gui.fishCountLabel then
-                    gui.fishCountLabel.Text = "🐟 Ikan Tertangkap: " .. fishCount
+                if CONFIG.SHOW_GUI and _G.FishItGUI and _G.FishItGUI.fishCountLabel then -- <-- DIPERBAIKI: Gunakan referensi global
+                    _G.FishItGUI.fishCountLabel.Text = "🐟 Ikan Tertangkap: " .. fishCount
                 end
-                
                 sendWebhook(fishData)
-                
                 StarterGui:SetCore("SendNotification", {
                     Title = "🎣 Fish It! - " .. (rarity == "Common" and "Ikan Tertangkap!" or "RARE FISH! 🦈");
                     Text = fishName .. " (" .. rarity .. ")";
@@ -602,15 +589,12 @@ local function setupFishDetection()
                 })
             end
         end
-        
         if player.Backpack then
             player.Backpack.ChildAdded:Connect(onChildAdded)
         end
-        
         player.CharacterAdded:Connect(function(character)
             character.ChildAdded:Connect(onChildAdded)
         end)
-        
         if player.Character then
             player.Character.ChildAdded:Connect(onChildAdded)
         end
@@ -623,20 +607,21 @@ local function setupFishDetection()
 end
 
 -- Create GUI and setup
-local screenGui, gui
+local screenGui, guiElements
 if CONFIG.SHOW_GUI then
-    screenGui, gui = createModernGUI()
-    
+    screenGui, guiElements = createModernGUI()
+    _G.FishItGUI = guiElements -- <-- DIPERBAIKI: Simpan referensi global
+
     -- Button Functions
-    gui.toggleBtn.MouseButton1Click:Connect(function()
+    guiElements.toggleBtn.MouseButton1Click:Connect(function()
         CONFIG.ENABLED = not CONFIG.ENABLED
-        gui.toggleBtn.Text = CONFIG.ENABLED and "⏸️ Matikan" or "▶️ Aktifkan"
-        gui.toggleBtn.BackgroundColor3 = CONFIG.ENABLED and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(100, 255, 100)
-        gui.statusLabel.Text = "Status: " .. (CONFIG.ENABLED and "🟢 Aktif" or "🔴 Nonaktif")
-        gui.statusLabel.TextColor3 = CONFIG.ENABLED and Color3.fromRGB(80, 255, 80) or Color3.fromRGB(255, 80, 80)
+        guiElements.toggleBtn.Text = CONFIG.ENABLED and "⏸️ Matikan" or "▶️ Aktifkan"
+        guiElements.toggleBtn.BackgroundColor3 = CONFIG.ENABLED and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(100, 255, 100)
+        guiElements.statusLabel.Text = "Status: " .. (CONFIG.ENABLED and "🟢 Aktif" or "🔴 Nonaktif")
+        guiElements.statusLabel.TextColor3 = CONFIG.ENABLED and Color3.fromRGB(80, 255, 80) or Color3.fromRGB(255, 80, 80)
     end)
-    
-    gui.testBtn.MouseButton1Click:Connect(function()
+
+    guiElements.testBtn.MouseButton1Click:Connect(function()
         local testData = {
             name = "Test Megalodon 🦈",
             rarity = "Mythic",
@@ -652,116 +637,114 @@ if CONFIG.SHOW_GUI then
             Duration = 3;
         })
     end)
-    
-    gui.rareToggle.MouseButton1Click:Connect(function()
+
+    guiElements.rareToggle.MouseButton1Click:Connect(function()
         CONFIG.RARE_FISH_ONLY = not CONFIG.RARE_FISH_ONLY
-        gui.rareToggle.Text = "🦈 " .. (CONFIG.RARE_FISH_ONLY and "Semua Ikan" or "Hanya Rare/Shark")
-        gui.rareToggle.BackgroundColor3 = CONFIG.RARE_FISH_ONLY and Color3.fromRGB(255, 165, 0) or Color3.fromRGB(70, 130, 180)
+        guiElements.rareToggle.Text = "🦈 " .. (CONFIG.RARE_FISH_ONLY and "Semua Ikan" or "Hanya Rare/Shark")
+        guiElements.rareToggle.BackgroundColor3 = CONFIG.RARE_FISH_ONLY and Color3.fromRGB(255, 165, 0) or Color3.fromRGB(70, 130, 180)
     end)
-    
-    gui.closeBtn.MouseButton1Click:Connect(function()
+
+    guiElements.closeBtn.MouseButton1Click:Connect(function()
         screenGui:Destroy()
+        _G.FishItGUI = nil -- <-- DIPERBAIKI: Bersihkan referensi global
     end)
-    
-    gui.minBtn.MouseButton1Click:Connect(function()
-        local isMinimized = gui.mainFrame.Size.Y.Offset <= 80
-        
+
+    guiElements.minBtn.MouseButton1Click:Connect(function()
+        local isMinimized = guiElements.mainFrame.Size.Y.Offset <= 80
         if isMinimized then
             -- Restore window
-            local tween = TweenService:Create(gui.mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
+            local tween = TweenService:Create(guiElements.mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
                 Size = UDim2.new(0, 420, 0, 350)
             })
             tween:Play()
-            gui.minBtn.Text = "−"
+            guiElements.minBtn.Text = "−"
         else
             -- Minimize window
-            local tween = TweenService:Create(gui.mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
+            local tween = TweenService:Create(guiElements.mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
                 Size = UDim2.new(0, 420, 0, 60)
             })
             tween:Play()
-            gui.minBtn.Text = "□"
+            guiElements.minBtn.Text = "□"
         end
     end)
-    
+
     -- Dragging functionality
     local dragging = false
     local dragStart = nil
     local startPos = nil
-    
+
     local function startDrag(input)
         dragging = true
         dragStart = input.Position
-        startPos = gui.mainFrame.Position
+        startPos = guiElements.mainFrame.Position
     end
-    
+
     local function updateDrag(input)
-        if dragging and dragStart then
+        if dragging and dragStart and guiElements and guiElements.mainFrame and guiElements.mainFrame.Parent then -- <-- DIPERBAIKI: Tambahkan pengecekan
             local delta = input.Position - dragStart
             local newPos = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, 
                                    startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-            gui.mainFrame.Position = newPos
-            gui.shadow.Position = UDim2.new(0, newPos.X.Offset - 7, 0, newPos.Y.Offset - 7)
+            guiElements.mainFrame.Position = newPos
+            if guiElements.shadow and guiElements.shadow.Parent then
+                guiElements.shadow.Position = UDim2.new(0, newPos.X.Offset - 7, 0, newPos.Y.Offset - 7)
+            end
         end
     end
-    
+
     local function endDrag()
         dragging = false
     end
-    
+
     -- Connect drag events to title bar
-    gui.mainFrame.InputBegan:Connect(function(input)
+    guiElements.mainFrame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             startDrag(input)
         end
     end)
-    
-    gui.mainFrame.InputChanged:Connect(function(input)
+
+    guiElements.mainFrame.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement then
             updateDrag(input)
         end
     end)
-    
-    gui.mainFrame.InputEnded:Connect(function(input)
+
+    guiElements.mainFrame.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             endDrag()
         end
     end)
-    
+
     -- Entrance animation
-    gui.mainFrame.Size = UDim2.new(0, 0, 0, 0)
-    gui.mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-    gui.shadow.BackgroundTransparency = 1
-    
-    local entranceTween = TweenService:Create(gui.mainFrame, TweenInfo.new(0.6, Enum.EasingStyle.Back), {
+    guiElements.mainFrame.Size = UDim2.new(0, 0, 0, 0)
+    guiElements.mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+    guiElements.shadow.BackgroundTransparency = 1
+    local entranceTween = TweenService:Create(guiElements.mainFrame, TweenInfo.new(0.6, Enum.EasingStyle.Back), {
         Size = UDim2.new(0, 420, 0, 350),
         Position = UDim2.new(0.5, -210, 0.5, -175)
     })
-    
-    local shadowTween = TweenService:Create(gui.shadow, TweenInfo.new(0.6, Enum.EasingStyle.Back), {
+    local shadowTween = TweenService:Create(guiElements.shadow, TweenInfo.new(0.6, Enum.EasingStyle.Back), {
         BackgroundTransparency = 0.7
     })
-    
     entranceTween:Play()
     shadowTween:Play()
-    
+
     -- Add glow effect on hover for buttons
     local function addHoverEffect(button, hoverColor, originalColor)
         button.MouseEnter:Connect(function()
             local tween = TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = hoverColor})
             tween:Play()
         end)
-        
         button.MouseLeave:Connect(function()
             local tween = TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = originalColor})
             tween:Play()
         end)
     end
-    
-    addHoverEffect(gui.toggleBtn, Color3.fromRGB(255, 120, 120), CONFIG.ENABLED and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(100, 255, 100))
-    addHoverEffect(gui.testBtn, Color3.fromRGB(120, 170, 255), Color3.fromRGB(100, 150, 255))
-    addHoverEffect(gui.rareToggle, Color3.fromRGB(255, 185, 20), CONFIG.RARE_FISH_ONLY and Color3.fromRGB(255, 165, 0) or Color3.fromRGB(70, 130, 180))
-    addHoverEffect(gui.closeBtn, Color3.fromRGB(240, 70, 70), Color3.fromRGB(220, 50, 50))
-    addHoverEffect(gui.minBtn, Color3.fromRGB(255, 213, 27), Color3.fromRGB(255, 193, 7))
+
+    addHoverEffect(guiElements.toggleBtn, Color3.fromRGB(255, 120, 120), CONFIG.ENABLED and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(100, 255, 100))
+    addHoverEffect(guiElements.testBtn, Color3.fromRGB(120, 170, 255), Color3.fromRGB(100, 150, 255))
+    addHoverEffect(guiElements.rareToggle, Color3.fromRGB(255, 185, 20), CONFIG.RARE_FISH_ONLY and Color3.fromRGB(255, 165, 0) or Color3.fromRGB(70, 130, 180))
+    addHoverEffect(guiElements.closeBtn, Color3.fromRGB(240, 70, 70), Color3.fromRGB(220, 50, 50))
+    addHoverEffect(guiElements.minBtn, Color3.fromRGB(255, 213, 27), Color3.fromRGB(255, 193, 7))
 end
 
 -- Setup fish detection
@@ -779,8 +762,8 @@ local function tryAutoDetectWebhook()
     end
 end
 
-spawn(function()
-    wait(2)
+task.spawn(function() -- <-- DIPERBAIKI: Gunakan task.spawn
+    task.wait(2) -- <-- DIPERBAIKI: Gunakan task.wait
     tryAutoDetectWebhook()
 end)
 
@@ -818,13 +801,13 @@ warn("")
 warn("🌊 Selamat memancing di Fish It! 🐟")
 
 -- Performance monitoring
-spawn(function()
+task.spawn(function() -- <-- DIPERBAIKI: Gunakan task.spawn
     while true do
-        wait(60) -- Check every minute
-        if CONFIG.ENABLED and gui and gui.statusLabel then
+        task.wait(60) -- Check every minute -- <-- DIPERBAIKI: Gunakan task.wait
+        if CONFIG.ENABLED and _G.FishItGUI and _G.FishItGUI.statusLabel then
             -- Update status with performance info
             local currentTime = os.date("%H:%M")
-            gui.statusLabel.Text = "Status: 🟢 Aktif (" .. currentTime .. ")"
+            _G.FishItGUI.statusLabel.Text = "Status: 🟢 Aktif (" .. currentTime .. ")"
         end
     end
 end)
@@ -841,5 +824,10 @@ game.Players.PlayerRemoving:Connect(function(leavingPlayer)
     if leavingPlayer == player then
         print("🌊 Fish It! Webhook script shutting down...")
         saveConfig()
+        if _G.FishItGUI then
+            _G.FishItGUI = nil -- <-- DIPERBAIKI: Bersihkan referensi
+        end
     end
 end)
+
+print("✅ Script Fish It! Webhook telah diperbaiki dan siap digunakan!")
