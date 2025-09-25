@@ -1,171 +1,169 @@
--- Auto Teleport GUI dengan Animasi & Countdown 10 Detik
+-- 🔁 AUTO TELEPORT GUI - ON TERUS (Respawn Loop)
 -- Game ID: 114723492884959
+-- Koordinat: [-865, 815, 1783]
 
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 -- Data lokasi
-local locationData = {
-    NAME = "e",
-    COORD = Vector3.new(-865, 815, 1783)
-}
+local TARGET_COORD = Vector3.new(-865, 815, 1783)
+local LOCATION_NAME = "e"
 
--- Buat GUI
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "AutoTeleportGUI"
-screenGui.ResetOnSpawn = false
-screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-screenGui.Enabled = false -- akan di-enable setelah animasi
+-- Fungsi untuk membuat dan tampilkan GUI
+local function createTeleportGUI()
+    -- Batalkan GUI lama jika ada
+    if playerGui:FindFirstChild("AutoTeleportGUI") then
+        playerGui.AutoTeleportGUI:Destroy()
+    end
 
--- Main Frame
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 320, 0, 200)
-mainFrame.Position = UDim2.new(0.5, -160, 1, 0) -- mulai dari bawah layar
-mainFrame.AnchorPoint = Vector2.new(0.5, 1)
-mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-mainFrame.BackgroundTransparency = 0.9
-mainFrame.BorderColor3 = Color3.fromRGB(0, 180, 255)
-mainFrame.BorderSizePixel = 2
-mainFrame.ClipsDescendants = true
-mainFrame.Parent = screenGui
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "AutoTeleportGUI"
+    screenGui.ResetOnSpawn = false
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    screenGui.Enabled = false
+    screenGui.Parent = playerGui
 
--- Judul
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 35)
-title.BackgroundTransparency = 1
-title.Text = "📍 AUTO TELEPORT"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.TextSize = 20
-title.Font = Enum.Font.GothamBlack
-title.TextXAlignment = Enum.TextXAlignment.Center
-title.Parent = mainFrame
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Size = UDim2.new(0, 320, 0, 200)
+    mainFrame.Position = UDim2.new(0.5, -160, 1, 0)
+    mainFrame.AnchorPoint = Vector2.new(0.5, 1)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    mainFrame.BackgroundTransparency = 0.9
+    mainFrame.BorderColor3 = Color3.fromRGB(0, 180, 255)
+    mainFrame.BorderSizePixel = 2
+    mainFrame.Parent = screenGui
 
--- Nama lokasi
-local nameLabel = Instance.new("TextLabel")
-nameLabel.Size = UDim2.new(1, -20, 0, 25)
-nameLabel.Position = UDim2.new(0, 10, 0, 45)
-nameLabel.BackgroundTransparency = 1
-nameLabel.Text = "Tujuan: " .. locationData.NAME
-nameLabel.TextColor3 = Color3.fromRGB(0, 220, 255)
-nameLabel.TextSize = 16
-nameLabel.Font = Enum.Font.GothamBold
-nameLabel.Parent = mainFrame
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 35)
+    title.BackgroundTransparency = 1
+    title.Text = "📍 AUTO TELEPORT (ON TERUS)"
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.TextSize = 18
+    title.Font = Enum.Font.GothamBlack
+    title.TextXAlignment = Enum.TextXAlignment.Center
+    title.Parent = mainFrame
 
--- Koordinat
-local coordLabel = Instance.new("TextLabel")
-coordLabel.Size = UDim2.new(1, -20, 0, 25)
-coordLabel.Position = UDim2.new(0, 10, 0, 70)
-coordLabel.BackgroundTransparency = 1
-coordLabel.Text = string.format("Posisi: [%.0f, %.0f, %.0f]", 
-    locationData.COORD.X, locationData.COORD.Y, locationData.COORD.Z)
-coordLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
-coordLabel.TextSize = 14
-coordLabel.Font = Enum.Font.Gotham
-coordLabel.Parent = mainFrame
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Size = UDim2.new(1, -20, 0, 25)
+    nameLabel.Position = UDim2.new(0, 10, 0, 45)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Text = "Tujuan: " .. LOCATION_NAME
+    nameLabel.TextColor3 = Color3.fromRGB(0, 220, 255)
+    nameLabel.TextSize = 16
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.Parent = mainFrame
 
--- Countdown Timer
-local timerLabel = Instance.new("TextLabel")
-timerLabel.Size = UDim2.new(1, 0, 0, 30)
-timerLabel.Position = UDim2.new(0, 0, 0, 100)
-timerLabel.BackgroundTransparency = 1
-timerLabel.Text = "Teleport otomatis dalam: 10 detik"
-timerLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-timerLabel.TextSize = 16
-timerLabel.Font = Enum.Font.GothamBold
-timerLabel.TextXAlignment = Enum.TextXAlignment.Center
-timerLabel.Parent = mainFrame
+    local coordLabel = Instance.new("TextLabel")
+    coordLabel.Size = UDim2.new(1, -20, 0, 25)
+    coordLabel.Position = UDim2.new(0, 10, 0, 70)
+    coordLabel.BackgroundTransparency = 1
+    coordLabel.Text = string.format("Posisi: [%.0f, %.0f, %.0f]", TARGET_COORD.X, TARGET_COORD.Y, TARGET_COORD.Z)
+    coordLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+    coordLabel.TextSize = 14
+    coordLabel.Font = Enum.Font.Gotham
+    coordLabel.Parent = mainFrame
 
--- Tombol Manual Teleport
-local teleportBtn = Instance.new("TextButton")
-teleportBtn.Size = UDim2.new(0.8, 0, 0, 35)
-teleportBtn.Position = UDim2.new(0.1, 0, 0, 140)
-teleportBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
-teleportBtn.BackgroundTransparency = 0.2
-teleportBtn.BorderColor3 = Color3.fromRGB(0, 200, 255)
-teleportBtn.BorderSizePixel = 2
-teleportBtn.Text = "TELEPORT SEKARANG"
-teleportBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-teleportBtn.TextSize = 16
-teleportBtn.Font = Enum.Font.GothamBold
-teleportBtn.AutoButtonColor = false
+    local timerLabel = Instance.new("TextLabel")
+    timerLabel.Size = UDim2.new(1, 0, 0, 30)
+    timerLabel.Position = UDim2.new(0, 0, 0, 100)
+    timerLabel.BackgroundTransparency = 1
+    timerLabel.Text = "Teleport otomatis dalam: 10 detik"
+    timerLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+    timerLabel.TextSize = 16
+    timerLabel.Font = Enum.Font.GothamBold
+    timerLabel.TextXAlignment = Enum.TextXAlignment.Center
+    timerLabel.Parent = mainFrame
 
--- Efek hover tombol
-teleportBtn.MouseEnter:Connect(function()
-    teleportBtn.BackgroundTransparency = 0
-    teleportBtn.BackgroundColor3 = Color3.fromRGB(0, 160, 255)
-end)
-teleportBtn.MouseLeave:Connect(function()
-    teleportBtn.BackgroundTransparency = 0.2
+    local teleportBtn = Instance.new("TextButton")
+    teleportBtn.Size = UDim2.new(0.8, 0, 0, 35)
+    teleportBtn.Position = UDim2.new(0.1, 0, 0, 140)
     teleportBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
-end)
+    teleportBtn.BackgroundTransparency = 0.2
+    teleportBtn.BorderColor3 = Color3.fromRGB(0, 200, 255)
+    teleportBtn.BorderSizePixel = 2
+    teleportBtn.Text = "TELEPORT SEKARANG"
+    teleportBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    teleportBtn.TextSize = 16
+    teleportBtn.Font = Enum.Font.GothamBold
+    teleportBtn.AutoButtonColor = false
+    teleportBtn.Parent = mainFrame
 
-teleportBtn.Parent = mainFrame
+    -- Hover effect
+    teleportBtn.MouseEnter:Connect(function()
+        teleportBtn.BackgroundTransparency = 0
+        teleportBtn.BackgroundColor3 = Color3.fromRGB(0, 160, 255)
+    end)
+    teleportBtn.MouseLeave:Connect(function()
+        teleportBtn.BackgroundTransparency = 0.2
+        teleportBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
+    end)
 
--- Fungsi teleport
-local function teleportPlayer()
-    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        player.Character.HumanoidRootPart.CFrame = CFrame.new(locationData.COORD)
-        if screenGui.Parent then
+    -- Status teleport
+    local teleportActive = true
+
+    -- Fungsi teleport
+    local function doTeleport()
+        if teleportActive and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            player.Character.HumanoidRootPart.CFrame = CFrame.new(TARGET_COORD)
             screenGui:Destroy()
         end
     end
+
+    teleportBtn.MouseButton1Click:Connect(function()
+        teleportActive = false
+        doTeleport()
+    end)
+
+    -- Overlay untuk tutup GUI (opsional)
+    local overlay = Instance.new("TextButton")
+    overlay.Size = UDim2.new(1, 0, 1, 0)
+    overlay.BackgroundTransparency = 1
+    overlay.Text = ""
+    overlay.ZIndex = 1
+    overlay.Parent = screenGui
+    overlay.MouseButton1Click:Connect(function()
+        teleportActive = false
+        screenGui:Destroy()
+    end)
+
+    -- Animasi & countdown
+    spawn(function()
+        screenGui.Enabled = true
+
+        -- Animasi slide up
+        for i = 0, 1, 0.05 do
+            mainFrame.Position = UDim2.new(0.5, -160, 1, -200 * i)
+            mainFrame.BackgroundTransparency = 0.9 - (0.7 * i)
+            wait(0.02)
+        end
+
+        -- Countdown 10 detik
+        local count = 10
+        while teleportActive and count > 0 do
+            timerLabel.Text = "Teleport otomatis dalam: " .. count .. " detik"
+            count -= 1
+            wait(1)
+        end
+
+        if teleportActive then
+            timerLabel.Text = "Teleporting..."
+            timerLabel.TextColor3 = Color3.fromRGB(100, 255, 150)
+            wait(0.3)
+            doTeleport()
+        end
+    end)
+
+    return screenGui
 end
 
--- Tombol manual
-teleportBtn.MouseButton1Click:Connect(teleportPlayer)
-
--- Countdown & Teleport Otomatis
-local countdown = 10
-local teleportScheduled = true
-
-teleportBtn.MouseButton1Click:Connect(function()
-    teleportScheduled = false
-    teleportPlayer()
+-- 🔁 Trigger GUI setiap kali karakter muncul
+player.CharacterAdded:Connect(function(char)
+    wait(1) -- tunggu karakter siap
+    createTeleportGUI()
 end)
 
--- Animasi muncul (slide up + fade in)
-spawn(function()
-    screenGui.Parent = playerGui
-    screenGui.Enabled = true
-
-    -- Slide up
-    for i = 0, 1, 0.05 do
-        mainFrame.Position = UDim2.new(0.5, -160, 1, -200 * i)
-        mainFrame.BackgroundTransparency = 0.9 - (0.7 * i)
-        wait(0.02)
-    end
-
-    -- Countdown
-    while teleportScheduled and countdown > 0 do
-        timerLabel.Text = "Teleport otomatis dalam: " .. countdown .. " detik"
-        countdown -= 1
-        wait(1)
-    end
-
-    if teleportScheduled then
-        timerLabel.Text = "Teleporting..."
-        timerLabel.TextColor3 = Color3.fromRGB(100, 255, 150)
-        wait(0.5)
-        teleportPlayer()
-    end
-end)
-
--- Batalkan teleport jika karakter respawn atau GUI dihancurkan
-player.CharacterAdded:Connect(function()
-    teleportScheduled = false
-    if screenGui.Parent then
-        screenGui:Destroy()
-    end
-end)
-
--- Opsional: Tutup GUI jika diklik di luar (tambahkan overlay transparan)
-local overlay = Instance.new("TextButton")
-overlay.Size = UDim2.new(1, 0, 1, 0)
-overlay.BackgroundTransparency = 1
-overlay.Text = ""
-overlay.ZIndex = 1
-overlay.Parent = screenGui
-overlay.MouseButton1Click:Connect(function()
-    teleportScheduled = false
-    screenGui:Destroy()
-end)
+-- Jalankan pertama kali jika karakter sudah ada
+if player.Character then
+    wait(1)
+    createTeleportGUI()
+end
