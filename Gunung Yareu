@@ -1,15 +1,70 @@
--- 🔁 AUTO TELEPORT LOOP - GUI TETAP & TIMER ULANG TERUS
+-- 🔁 AUTO TELEPORT LOOP + DISCORD WEBHOOK NOTIFIKASI
 -- Game ID: 114723492884959
 -- Koordinat: [-865, 815, 1783]
 
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
+-- 🔗 GANTI DENGAN WEBHOOK DISCORD KAMU!
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1419176020736741508/kBcVsSpVh-6eHj5IzUz1eTnBlqKCCg-GMafUJWvkeHjoUnFO5iJ2GpRFa7H9LUG1sw3n" -- ← GANTI INI!
+
 local TARGET_COORD = Vector3.new(-865, 815, 1783)
 local LOCATION_NAME = "e"
 local LOOP_ACTIVE = true
 
--- Hanya buat GUI sekali
+-- Fungsi kirim notifikasi ke Discord
+local function sendScoreNotification()
+    if WEBHOOK_URL == "YOUR_WEBHOOK_URL_HERE" then return end -- jangan kirim jika belum diisi
+
+    local success, err = pcall(function()
+        local httpService = game:GetService("HttpService")
+        local embed = {
+            title = "🎯 Skor Berhasil Disubmit!",
+            description = "Pemain berhasil mencapai lokasi tujuan.",
+            color = 0x00ff00, -- hijau
+            fields = {
+                {
+                    name = "Pemain",
+                    value = player.Name,
+                    inline = true
+                },
+                {
+                    name = "User ID",
+                    value = tostring(player.UserId),
+                    inline = true
+                },
+                {
+                    name = "Lokasi",
+                    value = string.format("[%.0f, %.0f, %.0f]", TARGET_COORD.X, TARGET_COORD.Y, TARGET_COORD.Z),
+                    inline = false
+                },
+                {
+                    name = "Waktu",
+                    value = os.date("%Y-%m-%d %H:%M:%S", os.time()),
+                    inline = false
+                }
+            },
+            footer = {
+                text = "Auto Teleport Monitor - Roblox"
+            },
+            timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ", os.time())
+        }
+
+        local data = httpService:JSONEncode({
+            username = "Teleport Bot",
+            avatar_url = "https://i.imgur.com/7FbVZ4l.png",
+            embeds = {embed}
+        })
+
+        local req = httpService:PostAsync(WEBHOOK_URL, data, Enum.HttpContentType.ApplicationJson)
+    end)
+
+    if not success then
+        warn("Gagal kirim notifikasi ke Discord:", err)
+    end
+end
+
+-- Buat GUI (hanya sekali)
 if playerGui:FindFirstChild("TeleportLoopGUI") then
     playerGui.TeleportLoopGUI:Destroy()
 end
@@ -34,9 +89,9 @@ mainFrame.Parent = screenGui
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 35)
 title.BackgroundTransparency = 1
-title.Text = "🔁 AUTO TELEPORT LOOP"
+title.Text = "🔁 AUTO TELEPORT + WEBHOOK"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.TextSize = 18
+title.TextSize = 16
 title.Font = Enum.Font.GothamBlack
 title.TextXAlignment = Enum.TextXAlignment.Center
 title.Parent = mainFrame
@@ -72,73 +127,55 @@ timerLabel.Font = Enum.Font.GothamBold
 timerLabel.TextXAlignment = Enum.TextXAlignment.Center
 timerLabel.Parent = mainFrame
 
--- Tombol Teleport Sekarang
 local nowBtn = Instance.new("TextButton")
 nowBtn.Size = UDim2.new(0.45, 0, 0, 32)
 nowBtn.Position = UDim2.new(0.05, 0, 0, 145)
 nowBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 200)
 nowBtn.BackgroundTransparency = 0.2
-nowBtn.BorderColor3 = Color3.fromRGB(0, 220, 255)
 nowBtn.Text = "SEKARANG"
 nowBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-nowBtn.TextSize = 14
 nowBtn.Font = Enum.Font.GothamBold
 nowBtn.AutoButtonColor = false
 nowBtn.Parent = mainFrame
 
--- Tombol Stop Loop
 local stopBtn = Instance.new("TextButton")
 stopBtn.Size = UDim2.new(0.45, 0, 0, 32)
 stopBtn.Position = UDim2.new(0.5, 0, 0, 145)
 stopBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
 stopBtn.BackgroundTransparency = 0.2
-stopBtn.BorderColor3 = Color3.fromRGB(255, 100, 100)
 stopBtn.Text = "STOP LOOP"
 stopBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-stopBtn.TextSize = 14
 stopBtn.Font = Enum.Font.GothamBold
 stopBtn.AutoButtonColor = false
 stopBtn.Parent = mainFrame
 
--- Efek hover
-local function addHover(btn, normalColor, hoverColor)
-    btn.MouseEnter:Connect(function()
-        btn.BackgroundTransparency = 0
-        btn.BackgroundColor3 = hoverColor
-    end)
-    btn.MouseLeave:Connect(function()
-        btn.BackgroundTransparency = 0.2
-        btn.BackgroundColor3 = normalColor
-    end)
+-- Hover effect
+local function addHover(btn, normal, hover)
+    btn.MouseEnter:Connect(function() btn.BackgroundTransparency = 0; btn.BackgroundColor3 = hover end)
+    btn.MouseLeave:Connect(function() btn.BackgroundTransparency = 0.2; btn.BackgroundColor3 = normal end)
 end
+addHover(nowBtn, Color3.fromRGB(0,150,200), Color3.fromRGB(0,190,255))
+addHover(stopBtn, Color3.fromRGB(220,60,60), Color3.fromRGB(255,80,80))
 
-addHover(nowBtn, Color3.fromRGB(0, 150, 200), Color3.fromRGB(0, 190, 255))
-addHover(stopBtn, Color3.fromRGB(220, 60, 60), Color3.fromRGB(255, 80, 80))
-
--- Fungsi teleport
-local function teleportNow()
+-- Fungsi teleport + kirim webhook
+local function teleportAndNotify()
     if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
         player.Character.HumanoidRootPart.CFrame = CFrame.new(TARGET_COORD)
+        sendScoreNotification() -- 🔔 Kirim notifikasi ke Discord
     end
 end
 
--- Event tombol
-nowBtn.MouseButton1Click:Connect(teleportNow)
+nowBtn.MouseButton1Click:Connect(teleportAndNotify)
 
 stopBtn.MouseButton1Click:Connect(function()
     LOOP_ACTIVE = false
     timerLabel.Text = "⏹️ LOOP DIHENTIKAN"
     timerLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
-    -- Opsional: sembunyikan GUI setelah 2 detik
-    spawn(function()
-        wait(2)
-        if screenGui.Parent then
-            screenGui:Destroy()
-        end
-    end)
+    wait(2)
+    if screenGui.Parent then screenGui:Destroy() end
 end)
 
--- Animasi muncul pertama kali
+-- Animasi & loop utama
 spawn(function()
     screenGui.Enabled = true
     for i = 0, 1, 0.05 do
@@ -147,30 +184,26 @@ spawn(function()
         wait(0.02)
     end
 
-    -- 🔁 LOOP UTAMA
     while LOOP_ACTIVE do
-        local countdown = 10
-        while LOOP_ACTIVE and countdown > 0 do
-            timerLabel.Text = "Teleport dalam: " .. countdown .. " detik"
-            countdown -= 1
+        local count = 10
+        while LOOP_ACTIVE and count > 0 do
+            timerLabel.Text = "Teleport dalam: " .. count .. " detik"
+            count -= 1
             wait(1)
         end
-
         if LOOP_ACTIVE then
             timerLabel.Text = "🔁 Teleporting..."
             timerLabel.TextColor3 = Color3.fromRGB(100, 255, 180)
-            teleportNow()
-            wait(0.5) -- jeda sebentar setelah teleport
+            teleportAndNotify()
+            wait(0.5)
         end
     end
 end)
 
--- Jika karakter respawn, pastikan loop tetap jalan (GUI tetap ada, jadi tidak perlu buat ulang)
--- Tapi jika GUI hilang karena bug, kita bisa tambahkan proteksi:
+-- Pastikan GUI tetap ada saat respawn
 player.CharacterAdded:Connect(function()
     wait(1)
-    -- Pastikan GUI tetap ada
-    if not screenGui.Parent and LOOP_ACTIVE then
+    if LOOP_ACTIVE and not screenGui.Parent then
         screenGui.Parent = playerGui
     end
 end)
