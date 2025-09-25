@@ -1,0 +1,132 @@
+1-- Teleport GUI Keren - Roblox
+-- Dibuat untuk Game ID: 114723492884959
+
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Data lokasi teleport
+local locations = {
+    {NAME = "Lokasi 1", COORD = Vector3.new(-863, 816, 1784)},
+    {NAME = "Lokasi 2", COORD = Vector3.new(-819, 37, -226)},
+    {NAME = "Lokasi 3", COORD = Vector3.new(-865, 815, 1783)}
+}
+
+-- Buat ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "TeleportGUI"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Main Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 300, 0, 350)
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -175)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+mainFrame.BorderColor3 = Color3.fromRGB(0, 150, 255)
+mainFrame.BorderSizePixel = 2
+mainFrame.BackgroundTransparency = 0.2
+mainFrame.Parent = screenGui
+
+-- Judul
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 40)
+title.BackgroundTransparency = 1
+title.Text = "📍 TELEPORT MENU"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = 22
+title.Font = Enum.Font.GothamBold
+title.TextXAlignment = Enum.TextXAlignment.Center
+title.Parent = mainFrame
+
+-- Scrollable Frame untuk daftar lokasi
+local scrollFrame = Instance.new("ScrollingFrame")
+scrollFrame.Size = UDim2.new(1, -20, 1, -60)
+scrollFrame.Position = UDim2.new(0, 10, 0, 50)
+scrollFrame.BackgroundTransparency = 1
+scrollFrame.CanvasSize = UDim2.new(0, 0, 0, #locations * 80)
+scrollFrame.ScrollBarThickness = 6
+scrollFrame.Parent = mainFrame
+
+-- Template tombol
+local function createTeleportButton(locationData)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 70)
+    btn.BackgroundTransparency = 0.3
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+    btn.BorderColor3 = Color3.fromRGB(0, 120, 200)
+    btn.BorderSizePixel = 1
+    btn.Text = ""
+    btn.AutoButtonColor = false
+
+    -- Efek hover
+    btn.MouseEnter:Connect(function()
+        btn.BackgroundTransparency = 0.1
+        btn.BorderColor3 = Color3.fromRGB(0, 200, 255)
+    end)
+    btn.MouseLeave:Connect(function()
+        btn.BackgroundTransparency = 0.3
+        btn.BorderColor3 = Color3.fromRGB(0, 120, 200)
+    end)
+
+    -- Nama lokasi
+    local nameLbl = Instance.new("TextLabel")
+    nameLbl.Size = UDim2.new(1, -20, 0, 25)
+    nameLbl.Position = UDim2.new(0, 10, 0, 10)
+    nameLbl.BackgroundTransparency = 1
+    nameLbl.Text = locationData.NAME
+    nameLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nameLbl.TextSize = 18
+    nameLbl.Font = Enum.Font.GothamSemibold
+    nameLbl.Parent = btn
+
+    -- Koordinat
+    local coordLbl = Instance.new("TextLabel")
+    coordLbl.Size = UDim2.new(1, -20, 0, 25)
+    coordLbl.Position = UDim2.new(0, 10, 0, 35)
+    coordLbl.BackgroundTransparency = 1
+    coordLbl.Text = string.format("X: %.0f, Y: %.0f, Z: %.0f", 
+        locationData.COORD.X, locationData.COORD.Y, locationData.COORD.Z)
+    coordLbl.TextColor3 = Color3.fromRGB(180, 180, 200)
+    coordLbl.TextSize = 14
+    coordLbl.Font = Enum.Font.Gotham
+    coordLbl.Parent = btn
+
+    -- Fungsi teleport
+    btn.MouseButton1Click:Connect(function()
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            player.Character.HumanoidRootPart.CFrame = CFrame.new(locationData.COORD)
+            screenGui:Destroy() -- Opsional: tutup GUI setelah teleport
+        else
+            warn("Karakter tidak ditemukan!")
+        end
+    end)
+
+    return btn
+end
+
+-- Tambahkan semua tombol ke scroll frame
+for i, loc in ipairs(locations) do
+    local btn = createTeleportButton(loc)
+    btn.Position = UDim2.new(0, 0, 0, (i - 1) * 80)
+    btn.Parent = scrollFrame
+end
+
+-- Animasi fade-in
+screenGui.Enabled = false
+screenGui.Parent = playerGui
+spawn(function()
+    wait(0.1)
+    screenGui.Enabled = true
+    for i = 0, 1, 0.1 do
+        mainFrame.BackgroundTransparency = 0.8 - i * 0.6
+        wait(0.03)
+    end
+end)
+
+-- Tutup GUI saat pemain respawn atau leave
+player.CharacterAdded:Connect(function()
+    wait(1)
+    if screenGui.Parent then
+        screenGui:Destroy()
+    end
+end)
