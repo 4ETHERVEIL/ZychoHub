@@ -1,26 +1,54 @@
 -- CONFIG
-local webhookUrl = "https://discord.com/api/webhooks/1421461949522251838/Izr6hElwGceXBgCOPiJ8TjqNQCTBceKv-B46eVt_CCCjtgcMGrBM0ZDGWIedg16H54UF"
+local webhookUrl = "https://discord.com/api/webhooks/1407782433138544792/fWhrTFwFMOZyQkVy3wUKlHdVjzRejrLoFP8cVG__yuRrSZ88b83zQLbkLOA7g__rs32I"
 
 -- SERVICE
 local HttpService = game:GetService("HttpService")
 local player = game.Players.LocalPlayer
 
--- FUNGSI KIRIM
+-- FUNGSI KIRIM (AMAN UNTUK SEMUA EXECUTOR)
 local function sendWebhook(msg)
     local data = {["content"] = msg}
     local json = HttpService:JSONEncode(data)
 
-    (syn and syn.request or http_request)({
-        Url = webhookUrl,
-        Method = "POST",
-        Headers = {["Content-Type"] = "application/json"},
-        Body = json
-    })
+    -- Coba pakai syn.request jika ada
+    if syn and syn.request then
+        syn.request({
+            Url = webhookUrl,
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = json
+        })
+    -- Coba pakai http_request jika ada (untuk executor lama)
+    elseif http_request then
+        http_request({
+            Url = webhookUrl,
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = json
+        })
+    -- Jika tidak ada, gunakan HttpService:RequestAsync() (standar Roblox)
+    else
+        local success, response = pcall(function()
+            HttpService:RequestAsync({
+                Url = webhookUrl,
+                Method = "POST",
+                Headers = {
+                    ["Content-Type"] = "application/json"
+                },
+                Body = json
+            })
+        end)
+
+        if not success then
+            warn("Gagal kirim webhook:", tostring(response))
+        end
+    end
 end
 
 -- EVENT DAPET IKAN
-local fishEvent = game.ReplicatedStorage:WaitForChild("FishCaught") -- cek nama RemoteEvent bener2 ya
+local fishEvent = game.ReplicatedStorage:WaitForChild("FishCaught") -- pastikan nama RemoteEvent benar
 
 fishEvent.OnClientEvent:Connect(function(fishName, fishRarity, fishValue)
-    sendWebhook("🎣 "..player.Name.." dapet ikan: **"..fishName.."** | Rarity: *"..fishRarity.."* | Value: 💰"..tostring(fishValue))
+    local message = "🎣 "..player.Name.." dapet ikan: **"..fishName.."** | Rarity: *"..fishRarity.."* | Value: 💰"..tostring(fishValue)
+    sendWebhook(message)
 end)
