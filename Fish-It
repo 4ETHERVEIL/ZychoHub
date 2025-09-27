@@ -1,84 +1,26 @@
--- 🎣 Fish It! Webhook Notifier (Client-Side)
--- Pastikan nama RemoteEvent sesuai dengan yang ada di ReplicatedStorage
+-- CONFIG
+local webhookUrl = "https://discord.com/api/webhooks/1421461949522251838/Izr6hElwGceXBgCOPiJ8TjqNQCTBceKv-B46eVt_CCCjtgcMGrBM0ZDGWIedg16H54UF"
 
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+-- SERVICE
+local HttpService = game:GetService("HttpService")
+local player = game.Players.LocalPlayer
 
--- 🔗 Ganti dengan URL Webhook Discord kamu
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1421461949522251838/Izr6hElwGceXBgCOPiJ8TjqNQCTBceKv-B46eVt_CCCjtgcMGrBM0ZDGWIedg16H54UF" -- ← GANTI DENGAN WEBHOOK KAMU
+-- FUNGSI KIRIM
+local function sendWebhook(msg)
+    local data = {["content"] = msg}
+    local json = HttpService:JSONEncode(data)
 
--- 🎯 RemoteEvent dari server (pastikan namanya benar)
-local fishEvent = ReplicatedStorage:WaitForChild("FishCaught")
-
--- 📤 Fungsi kirim webhook dengan embed keren
-local function sendWebhook(fishName, fishRarity, fishValue)
-    -- 🎨 Tentukan warna embed berdasarkan rarity
-    local rarityColors = {
-        Common = 0xAAAAAA,      -- Abu-abu
-        Uncommon = 0x55FF55,    -- Hijau
-        Rare = 0x5555FF,        -- Biru
-        Epic = 0xAA55FF,        -- Ungu
-        Legendary = 0xFFAA00,   -- Emas
-        Mythic = 0xFF5555       -- Merah
-    }
-    local color = rarityColors[fishRarity] or 0x000000
-
-    -- 📦 Payload Discord Webhook (dengan embed)
-    local data = {
-        username = "🎣 Fish It! Notifier",
-        avatar_url = "https://i.imgur.com/6hXbF0A.png", -- Opsional: ganti dengan avatar kamu
-        embeds = {
-            {
-                title = "🎉 Ikan Baru Ditangkap!",
-                description = "Pemain **" .. player.Name .. "** berhasil menangkap ikan langka!",
-                color = color,
-                fields = {
-                    {
-                        name = "🐟 Nama Ikan",
-                        value = "**" .. fishName .. "**",
-                        inline = true
-                    },
-                    {
-                        name = "✨ Rarity",
-                        value = "**" .. fishRarity .. "**",
-                        inline = true
-                    },
-                    {
-                        name = "💰 Nilai",
-                        value = "**" .. tostring(fishValue) .. "** koin",
-                        inline = true
-                    }
-                },
-                footer = {
-                    text = "Fish It! • Notifikasi Otomatis",
-                    icon_url = "https://i.imgur.com/fish-icon.png" -- Opsional
-                },
-                timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
-            }
-        }
-    }
-
-    -- 🔁 Kirim ke Discord via HTTP POST
-    spawn(function()
-        local success, response = pcall(function()
-            return game:HttpGetAsync({
-                Url = WEBHOOK_URL,
-                Method = "POST",
-                Headers = { ["Content-Type"] = "application/json" },
-                Body = game:GetService("HttpService"):JSONEncode(data)
-            })
-        end)
-
-        if not success then
-            warn("❌ Gagal mengirim webhook:", response)
-        else
-            print("✅ Webhook terkirim untuk ikan:", fishName)
-        end
-    end)
+    (syn and syn.request or http_request)({
+        Url = webhookUrl,
+        Method = "POST",
+        Headers = {["Content-Type"] = "application/json"},
+        Body = json
+    })
 end
 
--- 🎣 Dengarkan event saat ikan ditangkap
+-- EVENT DAPET IKAN
+local fishEvent = game.ReplicatedStorage:WaitForChild("FishCaught") -- cek nama RemoteEvent bener2 ya
+
 fishEvent.OnClientEvent:Connect(function(fishName, fishRarity, fishValue)
-    sendWebhook(fishName, fishRarity, fishValue)
+    sendWebhook("🎣 "..player.Name.." dapet ikan: **"..fishName.."** | Rarity: *"..fishRarity.."* | Value: 💰"..tostring(fishValue))
 end)
