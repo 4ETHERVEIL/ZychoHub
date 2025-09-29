@@ -1,168 +1,209 @@
--- ✅ Teleport GUI - LocalScript (Tempatkan di StarterGui)
--- Versi: Diperbaiki agar GUI selalu muncul
+-- 🔁 AUTO TELEPORT LOOP + DISCORD WEBHOOK NOTIFIKASI
+-- Game ID: 114723492884959
+-- Koordinat: [-865, 815, 1783]
 
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local player = Players.LocalPlayer
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
--- Tunggu sampai PlayerGui benar-benar ada
-player:WaitForChild("PlayerGui")
+-- 🔗 GANTI DENGAN WEBHOOK DISCORD KAMU!
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1419176020736741508/kBcVsSpVh-6eHj5IzUz1eTnBlqKCCg-GMafUJWvkeHjoUnFO5iJ2GpRFa7H9LUG1sw3n" -- ← GANTI INI!
 
--- Debug: Pastikan script berjalan
-print("✅ Teleport GUI script loaded for player:", player.Name)
+local TARGET_COORD = Vector3.new(-865, 815, 1783)
+local LOCATION_NAME = "e"
+local LOOP_ACTIVE = true
 
--- Data teleport (sama seperti sebelumnya)
-local teleportData = {
-    {GAME = 114723492884959, NAME = "1", COORD = Vector3.new(-124,126,-51)},
-    {GAME = 114723492884959, NAME = "2", COORD = Vector3.new(-171,160,497)},
-    {GAME = 114723492884959, NAME = "3", COORD = Vector3.new(-216,101,755)},
-    {GAME = 114723492884959, NAME = "4", COORD = Vector3.new(-663,322,974)},
-    {GAME = 114723492884959, NAME = "5", COORD = Vector3.new(-895,452,1064)},
-    {GAME = 114723492884959, NAME = "6", COORD = Vector3.new(-1125,530,1054)},
-    {GAME = 114723492884959, NAME = "7", COORD = Vector3.new(-1141,531,1305)},
-    {GAME = 114723492884959, NAME = "8", COORD = Vector3.new(-1169,518,1842)},
-    {GAME = 114723492884959, NAME = "9", COORD = Vector3.new(-873,699,1809)},
-    {GAME = 114723492884959, NAME = "0", COORD = Vector3.new(-914,762,1925)},
-}
+-- Fungsi kirim notifikasi ke Discord
+local function sendScoreNotification()
+    if WEBHOOK_URL == "YOUR_WEBHOOK_URL_HERE" then return end -- jangan kirim jika belum diisi
 
--- Buat ScreenGui
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "TeleportGUI"
-screenGui.ResetOnSpawn = false
-screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
--- Frame utama (tersembunyi awalnya)
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 300, 0, 400)
-mainFrame.Position = UDim2.new(0.5, -150, 2, 0) -- Mulai di luar layar (bawah)
-mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-mainFrame.BorderSizePixel = 0
-mainFrame.Visible = true -- Tetap visible, tapi posisi di luar layar
-mainFrame.Parent = screenGui
-
--- Judul
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 40)
-title.BackgroundTransparency = 1
-title.Text = "⚡ Teleport System"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.Font = Enum.Font.GothamBold
-title.TextSize = 20
-title.Parent = mainFrame
-
--- Tombol toggle (☰ / ✕)
-local toggleBtn = Instance.new("TextButton")
-toggleBtn.Size = UDim2.new(0, 50, 0, 50)
-toggleBtn.Position = UDim2.new(1, -60, 0, 10)
-toggleBtn.Text = "☰"
-toggleBtn.Font = Enum.Font.GothamBold
-toggleBtn.TextSize = 24
-toggleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
-toggleBtn.BorderSizePixel = 0
-toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggleBtn.Parent = screenGui
-
--- Slider delay
-local delaySlider = Instance.new("UISlider")
-delaySlider.Size = UDim2.new(0.9, 0, 0, 30)
-delaySlider.Position = UDim2.new(0.05, 0, 0, 60)
-delaySlider.MinValue = 1
-delaySlider.MaxValue = 60
-delaySlider.Value = 5
-delaySlider.Parent = mainFrame
-
--- Label delay
-local delayLabel = Instance.new("TextLabel")
-delayLabel.Size = UDim2.new(1, 0, 0, 30)
-delayLabel.Position = UDim2.new(0, 0, 0, 100)
-delayLabel.BackgroundTransparency = 1
-delayLabel.Text = "Delay: 5 detik"
-delayLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
-delayLabel.Font = Enum.Font.Gotham
-delayLabel.TextSize = 16
-delayLabel.Parent = mainFrame
-
--- Tombol Start
-local startBtn = Instance.new("TextButton")
-startBtn.Size = UDim2.new(0.8, 0, 0, 40)
-startBtn.Position = UDim2.new(0.1, 0, 0, 150)
-startBtn.Text = "▶ START TELEPORT"
-startBtn.Font = Enum.Font.GothamBold
-startBtn.TextSize = 18
-startBtn.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
-startBtn.BorderSizePixel = 0
-startBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-startBtn.Parent = mainFrame
-
--- Countdown
-local countdownLabel = Instance.new("TextLabel")
-countdownLabel.Size = UDim2.new(1, 0, 0, 50)
-countdownLabel.Position = UDim2.new(0, 0, 0, 210)
-countdownLabel.BackgroundTransparency = 1
-countdownLabel.Text = ""
-countdownLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-countdownLabel.Font = Enum.Font.GothamBold
-countdownLabel.TextSize = 30
-countdownLabel.Visible = false
-countdownLabel.Parent = mainFrame
-
--- Status GUI
-local guiOpen = false
-
--- Fungsi animasi toggle
-local function toggleGUI()
-    guiOpen = not guiOpen
-    local targetY = guiOpen and UDim2.new(0.5, -150, 0.5, -200) or UDim2.new(0.5, -150, 2, 0)
-    local tween = TweenService:Create(mainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = targetY})
-    tween:Play()
-    toggleBtn.Text = guiOpen and "✕" or "☰"
-end
-
-toggleBtn.MouseButton1Click:Connect(toggleGUI)
-
--- Update label delay
-delaySlider.Changed:Connect(function()
-    if delaySlider:IsA("UISlider") then
-        delayLabel.Text = "Delay: " .. math.floor(delaySlider.Value) .. " detik"
-    end
-end)
-
--- Teleport logic
-local teleporting = false
-local function startTeleport()
-    if teleporting then return end
-    teleporting = true
-    startBtn.Text = "⏳ TELEPORTING..."
-    startBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-    countdownLabel.Visible = true
-
-    local delay = math.floor(delaySlider.Value)
-
-    for i = delay, 0, -1 do
-        countdownLabel.Text = "Teleport in: " .. i .. "s"
-        wait(1)
-    end
-
-    local chosen = teleportData[math.random(1, #teleportData)]
     local success, err = pcall(function()
-        game:GetService("TeleportService"):TeleportToPlaceInstance(chosen.GAME, game.JobId, player, chosen.COORD)
+        local httpService = game:GetService("HttpService")
+        local embed = {
+            title = "🎯 Skor Berhasil Disubmit!",
+            description = "Pemain berhasil mencapai lokasi tujuan.",
+            color = 0x00ff00, -- hijau
+            fields = {
+                {
+                    name = "Pemain",
+                    value = player.Name,
+                    inline = true
+                },
+                {
+                    name = "User ID",
+                    value = tostring(player.UserId),
+                    inline = true
+                },
+                {
+                    name = "Lokasi",
+                    value = string.format("[%.0f, %.0f, %.0f]", TARGET_COORD.X, TARGET_COORD.Y, TARGET_COORD.Z),
+                    inline = false
+                },
+                {
+                    name = "Waktu",
+                    value = os.date("%Y-%m-%d %H:%M:%S", os.time()),
+                    inline = false
+                }
+            },
+            footer = {
+                text = "Auto Teleport Monitor - Roblox"
+            },
+            timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ", os.time())
+        }
+
+        local data = httpService:JSONEncode({
+            username = "Teleport Bot",
+            avatar_url = "https://i.imgur.com/7FbVZ4l.png",
+            embeds = {embed}
+        })
+
+        local req = httpService:PostAsync(WEBHOOK_URL, data, Enum.HttpContentType.ApplicationJson)
     end)
 
     if not success then
-        warn("Teleport failed:", err)
-        countdownLabel.Text = "❌ Gagal!"
-        wait(2)
+        warn("Gagal kirim notifikasi ke Discord:", err)
     end
-
-    teleporting = false
-    startBtn.Text = "▶ START TELEPORT"
-    startBtn.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
-    countdownLabel.Visible = false
 end
 
-startBtn.MouseButton1Click:Connect(startTeleport)
+-- Buat GUI (hanya sekali)
+if playerGui:FindFirstChild("TeleportLoopGUI") then
+    playerGui.TeleportLoopGUI:Destroy()
+end
 
--- Pasang GUI ke PlayerGui
-screenGui.Parent = player:WaitForChild("PlayerGui")
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "TeleportLoopGUI"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.Enabled = false
+screenGui.Parent = playerGui
 
-print("✅ GUI berhasil dibuat dan dipasang!")
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 340, 0, 220)
+mainFrame.Position = UDim2.new(0.5, -170, 1, 0)
+mainFrame.AnchorPoint = Vector2.new(0.5, 1)
+mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+mainFrame.BackgroundTransparency = 0.85
+mainFrame.BorderColor3 = Color3.fromRGB(0, 200, 255)
+mainFrame.BorderSizePixel = 2
+mainFrame.Parent = screenGui
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 35)
+title.BackgroundTransparency = 1
+title.Text = "🔁 AUTO TELEPORT + WEBHOOK"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = 16
+title.Font = Enum.Font.GothamBlack
+title.TextXAlignment = Enum.TextXAlignment.Center
+title.Parent = mainFrame
+
+local nameLabel = Instance.new("TextLabel")
+nameLabel.Size = UDim2.new(1, -20, 0, 25)
+nameLabel.Position = UDim2.new(0, 10, 0, 40)
+nameLabel.BackgroundTransparency = 1
+nameLabel.Text = "Tujuan: " .. LOCATION_NAME
+nameLabel.TextColor3 = Color3.fromRGB(0, 230, 255)
+nameLabel.TextSize = 16
+nameLabel.Font = Enum.Font.GothamBold
+nameLabel.Parent = mainFrame
+
+local coordLabel = Instance.new("TextLabel")
+coordLabel.Size = UDim2.new(1, -20, 0, 25)
+coordLabel.Position = UDim2.new(0, 10, 0, 65)
+coordLabel.BackgroundTransparency = 1
+coordLabel.Text = string.format("Posisi: [%.0f, %.0f, %.0f]", TARGET_COORD.X, TARGET_COORD.Y, TARGET_COORD.Z)
+coordLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+coordLabel.TextSize = 14
+coordLabel.Font = Enum.Font.Gotham
+coordLabel.Parent = mainFrame
+
+local timerLabel = Instance.new("TextLabel")
+timerLabel.Size = UDim2.new(1, 0, 0, 30)
+timerLabel.Position = UDim2.new(0, 0, 0, 100)
+timerLabel.BackgroundTransparency = 1
+timerLabel.Text = "Teleport dalam: 10 detik"
+timerLabel.TextColor3 = Color3.fromRGB(255, 120, 120)
+timerLabel.TextSize = 16
+timerLabel.Font = Enum.Font.GothamBold
+timerLabel.TextXAlignment = Enum.TextXAlignment.Center
+timerLabel.Parent = mainFrame
+
+local nowBtn = Instance.new("TextButton")
+nowBtn.Size = UDim2.new(0.45, 0, 0, 32)
+nowBtn.Position = UDim2.new(0.05, 0, 0, 145)
+nowBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 200)
+nowBtn.BackgroundTransparency = 0.2
+nowBtn.Text = "SEKARANG"
+nowBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+nowBtn.Font = Enum.Font.GothamBold
+nowBtn.AutoButtonColor = false
+nowBtn.Parent = mainFrame
+
+local stopBtn = Instance.new("TextButton")
+stopBtn.Size = UDim2.new(0.45, 0, 0, 32)
+stopBtn.Position = UDim2.new(0.5, 0, 0, 145)
+stopBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
+stopBtn.BackgroundTransparency = 0.2
+stopBtn.Text = "STOP LOOP"
+stopBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+stopBtn.Font = Enum.Font.GothamBold
+stopBtn.AutoButtonColor = false
+stopBtn.Parent = mainFrame
+
+-- Hover effect
+local function addHover(btn, normal, hover)
+    btn.MouseEnter:Connect(function() btn.BackgroundTransparency = 0; btn.BackgroundColor3 = hover end)
+    btn.MouseLeave:Connect(function() btn.BackgroundTransparency = 0.2; btn.BackgroundColor3 = normal end)
+end
+addHover(nowBtn, Color3.fromRGB(0,150,200), Color3.fromRGB(0,190,255))
+addHover(stopBtn, Color3.fromRGB(220,60,60), Color3.fromRGB(255,80,80))
+
+-- Fungsi teleport + kirim webhook
+local function teleportAndNotify()
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = CFrame.new(TARGET_COORD)
+        sendScoreNotification() -- 🔔 Kirim notifikasi ke Discord
+    end
+end
+
+nowBtn.MouseButton1Click:Connect(teleportAndNotify)
+
+stopBtn.MouseButton1Click:Connect(function()
+    LOOP_ACTIVE = false
+    timerLabel.Text = "⏹️ LOOP DIHENTIKAN"
+    timerLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+    wait(2)
+    if screenGui.Parent then screenGui:Destroy() end
+end)
+
+-- Animasi & loop utama
+spawn(function()
+    screenGui.Enabled = true
+    for i = 0, 1, 0.05 do
+        mainFrame.Position = UDim2.new(0.5, -170, 1, -220 * i)
+        mainFrame.BackgroundTransparency = 0.85 - (0.6 * i)
+        wait(0.02)
+    end
+
+    while LOOP_ACTIVE do
+        local count = 10
+        while LOOP_ACTIVE and count > 0 do
+            timerLabel.Text = "Teleport dalam: " .. count .. " detik"
+            count -= 1
+            wait(1)
+        end
+        if LOOP_ACTIVE then
+            timerLabel.Text = "🔁 Teleporting..."
+            timerLabel.TextColor3 = Color3.fromRGB(100, 255, 180)
+            teleportAndNotify()
+            wait(0.5)
+        end
+    end
+end)
+
+-- Pastikan GUI tetap ada saat respawn
+player.CharacterAdded:Connect(function()
+    wait(1)
+    if LOOP_ACTIVE and not screenGui.Parent then
+        screenGui.Parent = playerGui
+    end
+end)
