@@ -71,18 +71,22 @@ function AppContent() {
     }
   };
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
+  const runSearch = async (query: string) => {
+    if (!query.trim()) return;
     setLoading(true);
     try {
-      const results = await searchSongs(searchQuery);
+      const results = await searchSongs(query);
       setSongs(results);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    runSearch(searchQuery);
   };
 
   const handlePlaySong = (song: Song, context?: Song[]) => {
@@ -117,14 +121,25 @@ function AppContent() {
         {/* Mobile Header / Top Nav */}
         <header className="h-14 md:h-16 flex items-center justify-between px-4 md:px-6 shrink-0 bg-[#121212]/85 backdrop-blur-md md:rounded-2xl border border-white/5 z-20">
           <div className="flex items-center gap-3">
-             <img src="https://c.termai.cc/i165/w1eLXm.jpg" alt="Musicply" className="size-8 rounded-full object-cover border border-white/20" />
+             <img src="/zycho-logo.jpg" alt="ZychoDev" className="size-8 rounded-full object-cover border border-white/20" />
              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2">
-                {["Semua", "Musik", "Podcast"].map((tab, i) => (
+                {["Semua", "Musik"].map((tab, i) => (
                   <button 
                     key={tab}
+                    onClick={() => {
+                      if (tab === "Semua") {
+                        setActiveTab("Home");
+                        setSearchQuery("");
+                        loadHome();
+                      } else {
+                        setActiveTab("Search");
+                        setSearchQuery("musik");
+                        runSearch("musik");
+                      }
+                    }}
                     className={cn(
                       "px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap",
-                      i === 0 ? "bg-[#1db954] text-black" : "bg-white/10 text-white hover:bg-white/15"
+                      (tab === "Semua" && activeTab === "Home" && !searchQuery) || (tab === "Musik" && activeTab === "Search") ? "bg-[#a020f0] text-white shadow-lg shadow-[#a020f0]/30" : "bg-white/10 text-white hover:bg-white/15"
                     )}
                   >
                     {tab}
@@ -138,7 +153,7 @@ function AppContent() {
             </button>
             <button className="hidden md:flex relative size-10 rounded-xl glass-hover glass-panel items-center justify-center">
               <Bell className="size-4 text-[#b3b3b3]" />
-              <span className="absolute top-2 right-2 size-2 bg-[#1db954] rounded-full" />
+              <span className="absolute top-2 right-2 size-2 bg-[#a020f0] rounded-full" />
             </button>
           </div>
         </header>
@@ -162,7 +177,7 @@ function AppContent() {
                    placeholder="Minta rekomendasi lagu jazz santai..."
                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-6 pr-14 text-lg focus:outline-none focus:ring-2 focus:ring-white/20 transition-all font-medium"
                  />
-                 <button className="absolute right-4 top-1/2 -translate-y-1/2 size-10 rounded-xl bg-[#1db954] flex items-center justify-center text-black shadow-lg">
+                 <button className="absolute right-4 top-1/2 -translate-y-1/2 size-10 rounded-xl bg-[#a020f0] flex items-center justify-center text-black shadow-lg">
                    <Sparkles className="size-5" />
                  </button>
                </div>
@@ -180,7 +195,7 @@ function AppContent() {
                         value={searchQuery}
                         autoFocus={activeTab === "Search"}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-[#242424] border border-transparent rounded-full py-2.5 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#1db954]/50 focus:bg-[#2a2a2a] transition-all font-medium"
+                        className="w-full bg-[#242424] border border-transparent rounded-full py-2.5 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#a020f0]/50 focus:bg-[#2a2a2a] transition-all font-medium"
                       />
                     </form>
                   </div>
@@ -204,7 +219,7 @@ function AppContent() {
                            >
                              <img src={song.thumbnails[0]?.url} className="size-14 md:size-16 object-cover shadow-2xl" alt="" />
                              <span className="text-[11px] font-bold truncate pr-3 flex-1">{song.name}</span>
-                             <div className="size-10 rounded-full bg-[#1db954] items-center justify-center mr-2 shadow-lg hidden group-hover:flex transform translate-y-1 group-hover:translate-y-0 transition-all">
+                             <div className="size-10 rounded-full bg-[#a020f0] items-center justify-center mr-2 shadow-lg hidden group-hover:flex transform translate-y-1 group-hover:translate-y-0 transition-all">
                                 <Play className="size-4 fill-black text-black ml-1" />
                              </div>
                            </div>
@@ -246,11 +261,11 @@ function AppContent() {
                              <div className="flex items-center gap-4 mt-auto">
                                 <button 
                                   onClick={() => handlePlaySong(playlist.songs[0], playlist.songs)}
-                                  className="size-12 rounded-full bg-[#1db954] flex items-center justify-center text-black shadow-lg shadow-black/30 active:scale-95 transition-all hover:bg-white/90"
+                                  className="size-12 rounded-full bg-[#a020f0] flex items-center justify-center text-black shadow-lg shadow-black/30 active:scale-95 transition-all hover:bg-white/90"
                                 >
                                    <Play className="size-6 fill-current ml-0.5" />
                                 </button>
-                                <button className="size-12 rounded-full border border-white/10 hover:border-[#1db954]/60 flex items-center justify-center text-white active:scale-95 transition-all">
+                                <button className="size-12 rounded-full border border-white/10 hover:border-[#a020f0]/60 flex items-center justify-center text-white active:scale-95 transition-all">
                                    <Sparkles className="size-6" />
                                 </button>
                                 <button className="size-12 rounded-full bg-[#242424] hover:bg-[#2a2a2a] flex items-center justify-center text-white transition-colors ml-auto border border-white/5">

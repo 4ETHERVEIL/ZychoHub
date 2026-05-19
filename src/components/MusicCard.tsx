@@ -39,12 +39,12 @@ export default function MusicCard({ song, onClick, variant = "card" }: MusicCard
         style={{ backgroundColor: "#1e1e1e" }}
       >
         <div className="absolute top-2 left-2 flex items-center gap-1 z-10">
-           <div className="size-4 rounded-full bg-green-500 flex items-center justify-center">
+           <div className="size-4 rounded-full bg-[#a020f0] flex items-center justify-center">
               <div className="size-2 bg-black rounded-full" />
            </div>
            <span className="text-[8px] font-black tracking-tighter text-black bg-white/80 px-1 rounded uppercase">Radio</span>
         </div>
-        <div className="w-full h-full p-4 flex items-center justify-center bg-gradient-to-br from-green-500/20 to-transparent">
+        <div className="w-full h-full p-4 flex items-center justify-center bg-gradient-to-br from-[#a020f0]/25 to-transparent">
            <div className="relative">
               <img src={thumbnail} className="size-24 rounded-full shadow-2xl border-4 border-black/20" alt="" />
               <div className="absolute -bottom-1 -right-1 size-8 rounded-full bg-black flex items-center justify-center border-2 border-white/5">
@@ -75,7 +75,7 @@ export default function MusicCard({ song, onClick, variant = "card" }: MusicCard
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
           <motion.div 
             whileHover={{ scale: 1.1 }}
-            className="bg-[#1db954] text-black p-4 rounded-full translate-y-3 group-hover:translate-y-0 transition-transform shadow-2xl"
+            className="bg-[#a020f0] text-black p-4 rounded-full translate-y-3 group-hover:translate-y-0 transition-transform shadow-2xl"
           >
             <Play className="size-6 fill-current" />
           </motion.div>

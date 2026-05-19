@@ -7,9 +7,9 @@ interface DeveloperPageProps {
 
 export default function DeveloperPage({ onBack }: DeveloperPageProps) {
   return (
-    <div className="fixed inset-0 bg-[#0f0f0f] z-[60] overflow-y-auto no-scrollbar pb-24">
+    <div className="fixed inset-0 bg-[#07020f] z-[60] overflow-y-auto no-scrollbar pb-24">
       {/* Header */}
-      <header className="h-14 flex items-center px-4 sticky top-0 bg-[#0f0f0f]/80 backdrop-blur-md z-10">
+      <header className="h-14 flex items-center px-4 sticky top-0 bg-[#07020f]/80 backdrop-blur-md z-10">
         <button onClick={onBack} className="p-2 -ml-2">
           <ArrowLeft className="size-6" />
         </button>
@@ -17,15 +17,15 @@ export default function DeveloperPage({ onBack }: DeveloperPageProps) {
       </header>
 
       <main className="p-6">
-        <span className="text-[#1db954] text-xs font-bold uppercase tracking-widest">Lead Developer</span>
+        <span className="text-[#c026ff] text-xs font-bold uppercase tracking-widest">Lead Developer</span>
         
         {/* Profile Card */}
         <div className="flex flex-col items-center mt-12 mb-8">
           <div className="relative">
-             <div className="absolute -inset-4 bg-gradient-to-tr from-green-500/20 to-transparent rounded-full blur-2xl animate-pulse" />
+             <div className="absolute -inset-4 bg-gradient-to-tr from-[#a020f0]/25 to-transparent rounded-full blur-2xl animate-pulse" />
              <div className="size-48 rounded-full overflow-hidden border-4 border-[#1f1f1f] shadow-2xl relative mb-6">
                <img 
-                 src="https://c.termai.cc/i165/w1eLXm.jpg" 
+                 src="/zycho-logo.jpg" 
                  className="w-full h-full object-cover bg-black" 
                  alt="ZychoDev" 
                />
@@ -48,7 +48,7 @@ export default function DeveloperPage({ onBack }: DeveloperPageProps) {
              { icon: Twitter, label: "X" },
              { icon: Instagram, label: "Instagram" }
            ].map((social) => (
-             <button key={social.label} className="bg-[#1f1f1f] p-4 rounded-xl flex flex-col items-center gap-2 hover:bg-white/5 transition-colors">
+             <button key={social.label} className="bg-[#171022] p-4 rounded-xl flex flex-col items-center gap-2 hover:bg-white/5 transition-colors">
                <social.icon className="size-5" />
                <span className="text-[10px] text-white/40">{social.label}</span>
              </button>
@@ -56,9 +56,9 @@ export default function DeveloperPage({ onBack }: DeveloperPageProps) {
         </div>
 
         {/* Buy Me Coffee */}
-        <button className="w-full bg-[#1f1f1f] p-4 rounded-xl flex items-center gap-4 mb-6 hover:bg-white/5 transition-colors">
-          <div className="size-10 rounded-full bg-green-500/10 flex items-center justify-center">
-             <Coffee className="size-5 text-green-500" />
+        <button className="w-full bg-[#171022] p-4 rounded-xl flex items-center gap-4 mb-6 hover:bg-white/5 transition-colors">
+          <div className="size-10 rounded-full bg-[#a020f0]/15 flex items-center justify-center">
+             <Coffee className="size-5 text-[#c026ff]" />
           </div>
           <div className="text-left">
             <div className="text-sm font-bold">Like what I do?</div>
@@ -67,7 +67,7 @@ export default function DeveloperPage({ onBack }: DeveloperPageProps) {
         </button>
 
         {/* Download APK */}
-        <button className="w-full bg-[#1f1f1f] p-5 rounded-xl flex items-center justify-center gap-3 font-bold hover:bg-white/5 transition-colors border border-white/5">
+        <button className="w-full bg-[#171022] p-5 rounded-xl flex items-center justify-center gap-3 font-bold hover:bg-white/5 transition-colors border border-white/5">
           <Download className="size-5" />
           <span>Download APK</span>
         </button>

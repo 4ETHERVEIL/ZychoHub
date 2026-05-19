@@ -17,7 +17,7 @@ function BottomNavItem({ icon: Icon, label, active, onClick }: BottomNavItemProp
         active ? "text-white" : "text-white/40"
       )}
     >
-      <Icon className={cn("size-6", active && "text-green-500")} />
+      <Icon className={cn("size-6", active && "text-[#a020f0]")} />
       <span className="text-[9px] font-medium">{label}</span>
     </button>
   );

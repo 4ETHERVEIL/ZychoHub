@@ -16,7 +16,7 @@ function SidebarItem({ icon: Icon, label, active, onClick }: SidebarItemProps) {
       className={cn(
         "flex items-center gap-4 w-full px-4 py-3 rounded-xl transition-all duration-300",
         "hover:bg-white/5 group",
-        active ? "bg-[#1db954] text-black font-bold" : "text-[#b3b3b3] hover:text-white"
+        active ? "bg-[#a020f0] text-black font-bold" : "text-[#b3b3b3] hover:text-white"
       )}
     >
       <Icon className={cn("size-5 transition-transform group-hover:scale-110", active && "text-black")} />
@@ -39,7 +39,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     >
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-3 mb-2">
-        <img src="https://c.termai.cc/i165/w1eLXm.jpg" alt="Musicply" className="size-9 rounded-full object-cover border border-[#1db954]/60 shadow-lg" />
+        <img src="/zycho-logo.jpg" alt="Musicply" className="size-9 rounded-full object-cover border border-[#a020f0]/60 shadow-lg" />
         <span className="font-black text-lg tracking-tight text-white">Musicply</span>
       </div>
       <div className="bg-[#121212] border border-white/5 rounded-2xl p-2 mb-2">
@@ -72,7 +72,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       <div className="bg-[#121212] border border-white/5 rounded-2xl p-2 flex-1 custom-scrollbar overflow-y-auto">
         <div className="px-4 py-3 flex items-center justify-between text-[#b3b3b3]">
           <span className="text-xs uppercase tracking-widest font-bold">Playlists</span>
-          <Plus className="size-4 hover:text-[#1db954] cursor-pointer" />
+          <Plus className="size-4 hover:text-[#a020f0] cursor-pointer" />
         </div>
         <SidebarItem 
           icon={Plus} 

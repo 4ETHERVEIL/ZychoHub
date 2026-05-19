@@ -14,7 +14,7 @@ export default function LibraryPage({ onPlaySong }: LibraryPageProps) {
   const [activeSubTab, setActiveSubTab] = useState("Daftar putar");
   const { history, likedSongs, likedSongsData } = useMusic();
 
-  const tabs = ["Daftar putar", "Lagu", "Album", "Artis", "Podcasts"];
+  const tabs = ["Daftar putar", "Lagu", "Album", "Artis"];
 
   const libraryItems = [
     { icon: Heart, label: "Disukai", sub: `${likedSongs.length} lagu`, active: true },
@@ -85,7 +85,7 @@ export default function LibraryPage({ onPlaySong }: LibraryPageProps) {
               <h1 className="text-3xl font-bold">Lagu Disukai</h1>
               <button 
                 onClick={() => likedSongsData.length > 0 && onPlaySong(likedSongsData[0])}
-                className="size-14 rounded-full bg-green-500 flex items-center justify-center text-black shadow-lg hover:scale-105 active:scale-95 transition-transform"
+                className="size-14 rounded-full bg-[#a020f0] flex items-center justify-center text-black shadow-lg hover:scale-105 active:scale-95 transition-transform"
               >
                 <Play className="size-6 fill-current ml-1" />
               </button>
@@ -136,15 +136,6 @@ export default function LibraryPage({ onPlaySong }: LibraryPageProps) {
             <span className="text-2xl font-bold mb-2">Artis yang Disubscribe</span>
             <span className="text-sm text-white/40">
               Artis yang Anda ikuti akan muncul di sini.
-            </span>
-          </div>
-        )}
-
-        {activeSubTab === "Podcasts" && (
-          <div className="flex flex-col items-center justify-center py-40 text-center animate-in fade-in duration-300">
-            <span className="text-2xl font-bold mb-2">Mulai Mendengarkan Podcast</span>
-            <span className="text-sm text-white/40">
-              Podcast adalah cara yang bagus untuk mendengarkan cerita dan berita.
             </span>
           </div>
         )}
