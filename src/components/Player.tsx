@@ -85,20 +85,28 @@ export default function Player({ currentSong, isPlaying, onPlayPause, onOpenLyri
   };
 
   const onAudioEnded = () => {
+    const audio = audioRef.current;
+
+    // Jangan auto next kalau stream belum benar-benar punya durasi.
+    // Di Chrome Android, stream YouTube kadang memicu ended/error saat URL redirect/expired.
+    const hasValidDuration = !!audio && Number.isFinite(audio.duration) && audio.duration > 3;
+    const isReallyFinished = !!audio && hasValidDuration && audio.currentTime >= audio.duration - 1;
+    if (!isReallyFinished) return;
+
     if (repeatMode === 'one') {
-      if (audioRef.current) {
-        audioRef.current.currentTime = 0;
-        audioRef.current.play().catch(() => onPlayPause(false));
-      }
-    } else {
-      onSkipNext?.();
+      audio.currentTime = 0;
+      audio.play().catch(() => onPlayPause(false));
+      return;
     }
+
+    onSkipNext?.();
   };
 
   const onAudioError = () => {
-    console.error("Audio stream error");
+    // Sebelumnya error stream langsung memanggil nextSong(), akibatnya saat klik play
+    // lagu langsung pindah. Sekarang cukup pause dan tampilkan error di console.
+    console.error("Audio stream error - tidak auto pindah lagu");
     onPlayPause(false);
-    setTimeout(() => onSkipNext?.(), 1500);
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
