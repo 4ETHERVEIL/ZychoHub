@@ -64,7 +64,7 @@ export default function MusicCard({ song, onClick, variant = "card" }: MusicCard
       whileHover={{ y: -5 }}
       whileTap={{ scale: 0.98 }}
       onClick={() => onClick(song)}
-      className="bg-[#181818] hover:bg-[#282828] p-3 rounded-lg cursor-pointer transition-colors group"
+      className="bg-[#181818] hover:bg-[#282828] p-4 rounded-xl cursor-pointer transition-colors group"
     >
       <div className="relative aspect-square mb-3 overflow-hidden rounded-md shadow-lg">
         <img 
@@ -75,14 +75,14 @@ export default function MusicCard({ song, onClick, variant = "card" }: MusicCard
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
           <motion.div 
             whileHover={{ scale: 1.1 }}
-            className="bg-white text-black p-4 rounded-full shadow-2xl"
+            className="bg-[#1db954] text-black p-4 rounded-full translate-y-3 group-hover:translate-y-0 transition-transform shadow-2xl"
           >
             <Play className="size-6 fill-current" />
           </motion.div>
         </div>
       </div>
       <h3 className="font-bold text-white truncate mb-1 pr-8">{song.name}</h3>
-      <p className="text-xs font-medium text-white/40 truncate uppercase tracking-widest">
+      <p className="text-xs font-medium text-[#b3b3b3] truncate">
         {song.artist.name}
       </p>
     </motion.div>

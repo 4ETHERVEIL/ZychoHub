@@ -27,16 +27,16 @@ export default function DeveloperPage({ onBack }: DeveloperPageProps) {
                <img 
                  src="https://c.termai.cc/i165/w1eLXm.jpg" 
                  className="w-full h-full object-cover bg-black" 
-                 alt="NexaDev" 
+                 alt="ZychoDev" 
                />
              </div>
           </div>
           <div className="flex items-center gap-2 mb-2">
-             <h2 className="text-2xl font-black tracking-tight">NexaDev</h2>
+             <h2 className="text-2xl font-black tracking-tight">ZychoDev</h2>
              <CheckCircle2 className="size-5 text-blue-500 fill-current" />
           </div>
           <p className="text-white/60 text-center text-sm leading-relaxed max-w-xs">
-            Platform streaming musik modern gratis tanpa iklan. Nikmati jutaan lagu, buat daftar putar Anda sendiri, dan temukan musik baru setiap hari dengan kualitas audio premium tanpa batasan.
+            Platform streaming musik modern bergaya Spotify, cepat, gratis, dan nyaman dipakai. Nikmati jutaan lagu, buat daftar putar Anda sendiri, dan temukan musik baru setiap hari dengan kualitas audio premium tanpa batasan.
           </p>
         </div>
 

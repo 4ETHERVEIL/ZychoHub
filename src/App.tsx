@@ -110,12 +110,12 @@ function AppContent() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-[100dvh] overflow-hidden p-0 md:p-4 bg-black relative">
+    <div className="flex flex-col md:flex-row h-[100dvh] overflow-hidden p-0 md:p-4 spotify-gradient relative">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
       <div className="flex-1 flex flex-col min-w-0 md:ml-4 w-full z-10 overflow-hidden relative">
         {/* Mobile Header / Top Nav */}
-        <header className="h-14 md:h-16 flex items-center justify-between px-4 md:px-6 shrink-0 bg-black/80 backdrop-blur-md md:glass-surface md:rounded-2xl z-20">
+        <header className="h-14 md:h-16 flex items-center justify-between px-4 md:px-6 shrink-0 bg-[#121212]/85 backdrop-blur-md md:rounded-2xl border border-white/5 z-20">
           <div className="flex items-center gap-3">
              <img src="https://c.termai.cc/i165/w1eLXm.jpg" alt="Musicply" className="size-8 rounded-full object-cover border border-white/20" />
              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2">
@@ -124,7 +124,7 @@ function AppContent() {
                     key={tab}
                     className={cn(
                       "px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap",
-                      i === 0 ? "bg-white text-black" : "bg-white/10 text-white"
+                      i === 0 ? "bg-[#1db954] text-black" : "bg-white/10 text-white hover:bg-white/15"
                     )}
                   >
                     {tab}
@@ -137,8 +137,8 @@ function AppContent() {
                <Search className="size-5 text-white" />
             </button>
             <button className="hidden md:flex relative size-10 rounded-xl glass-hover glass-panel items-center justify-center">
-              <Bell className="size-4 text-white/60" />
-              <span className="absolute top-2 right-2 size-2 bg-white rounded-full" />
+              <Bell className="size-4 text-[#b3b3b3]" />
+              <span className="absolute top-2 right-2 size-2 bg-[#1db954] rounded-full" />
             </button>
           </div>
         </header>
@@ -153,8 +153,8 @@ function AppContent() {
                  <Sparkles className="size-12 text-white" />
                </div>
                <h1 className="text-3xl font-bold mb-4">Gemini AI Assistant</h1>
-               <p className="text-white/60 max-w-md mb-8">
-                 Tanya sesuatu tentang musik, artis favoritmu, atau minta rekomendasi playlist pribadi dari AI pintar NexMusic.
+               <p className="text-[#b3b3b3] max-w-md mb-8">
+                 Tanya sesuatu tentang musik, artis favoritmu, atau minta rekomendasi playlist pribadi dari AI pintar ZychoMusic.
                </p>
                <div className="w-full max-w-lg relative">
                  <input 
@@ -162,7 +162,7 @@ function AppContent() {
                    placeholder="Minta rekomendasi lagu jazz santai..."
                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-6 pr-14 text-lg focus:outline-none focus:ring-2 focus:ring-white/20 transition-all font-medium"
                  />
-                 <button className="absolute right-4 top-1/2 -translate-y-1/2 size-10 rounded-xl bg-white flex items-center justify-center text-black shadow-lg">
+                 <button className="absolute right-4 top-1/2 -translate-y-1/2 size-10 rounded-xl bg-[#1db954] flex items-center justify-center text-black shadow-lg">
                    <Sparkles className="size-5" />
                  </button>
                </div>
@@ -180,7 +180,7 @@ function AppContent() {
                         value={searchQuery}
                         autoFocus={activeTab === "Search"}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-white/5 border border-white/5 rounded-full py-2.5 pl-12 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-white/20 focus:bg-white/10 transition-all font-medium"
+                        className="w-full bg-[#242424] border border-transparent rounded-full py-2.5 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#1db954]/50 focus:bg-[#2a2a2a] transition-all font-medium"
                       />
                     </form>
                   </div>
@@ -200,11 +200,11 @@ function AppContent() {
                            <div 
                              key={`shelf-${song.videoId}`}
                              onClick={() => handlePlaySong(song)}
-                             className="flex items-center gap-3 bg-white/5 hover:bg-white/10 transition-colors rounded overflow-hidden cursor-pointer h-14 md:h-16 group"
+                             className="flex items-center gap-3 bg-[#181818] hover:bg-[#282828] transition-colors rounded-md overflow-hidden cursor-pointer h-14 md:h-16 group"
                            >
                              <img src={song.thumbnails[0]?.url} className="size-14 md:size-16 object-cover shadow-2xl" alt="" />
                              <span className="text-[11px] font-bold truncate pr-3 flex-1">{song.name}</span>
-                             <div className="size-10 rounded-full bg-white items-center justify-center mr-2 shadow-lg hidden group-hover:flex transform translate-y-1 group-hover:translate-y-0 transition-all">
+                             <div className="size-10 rounded-full bg-[#1db954] items-center justify-center mr-2 shadow-lg hidden group-hover:flex transform translate-y-1 group-hover:translate-y-0 transition-all">
                                 <Play className="size-4 fill-black text-black ml-1" />
                              </div>
                            </div>
@@ -215,8 +215,8 @@ function AppContent() {
                     {/* From the Community Section */}
                     <section>
                       <div className="flex items-center gap-2 mb-4 px-2">
-                        <Users className="size-5 text-white/60" />
-                        <h2 className="text-xl font-bold text-white/70">From the community</h2>
+                        <Users className="size-5 text-[#b3b3b3]" />
+                        <h2 className="text-xl font-bold text-white">From the community</h2>
                       </div>
                       <div className="flex items-center gap-6 overflow-x-auto no-scrollbar pb-4 px-2">
                         {[
@@ -224,8 +224,8 @@ function AppContent() {
                           { title: "Trending Indonesia", count: "45 lagu", songs: (songs || []).slice(4, 7) },
                           { title: "Soft Study Beats", count: "120 lagu", songs: (songs || []).slice(8, 11) }
                         ].map((playlist, idx) => (
-                          <div key={idx} className="min-w-[280px] bg-[#1a1c1a] rounded-3xl p-5 group flex flex-col h-[420px] shadow-2xl">
-                             <div className="grid grid-cols-2 gap-0.5 rounded-2xl overflow-hidden mb-5 aspect-square border-2 border-white/5">
+                          <div key={idx} className="min-w-[280px] bg-[#181818] hover:bg-[#282828] transition-colors rounded-xl p-5 group flex flex-col h-[420px] shadow-2xl">
+                             <div className="grid grid-cols-2 gap-0.5 rounded-2xl overflow-hidden mb-5 aspect-square border border-white/5">
                                {(playlist.songs || []).concat((songs || []).slice(12, 13)).slice(0, 4).map((s, i) => (
                                  <img key={i} src={s.thumbnails[0]?.url} className="size-full object-cover" alt="" />
                                ))}
@@ -246,14 +246,14 @@ function AppContent() {
                              <div className="flex items-center gap-4 mt-auto">
                                 <button 
                                   onClick={() => handlePlaySong(playlist.songs[0], playlist.songs)}
-                                  className="size-12 rounded-full bg-white flex items-center justify-center text-black shadow-lg shadow-black/30 active:scale-95 transition-all hover:bg-white/90"
+                                  className="size-12 rounded-full bg-[#1db954] flex items-center justify-center text-black shadow-lg shadow-black/30 active:scale-95 transition-all hover:bg-white/90"
                                 >
                                    <Play className="size-6 fill-current ml-0.5" />
                                 </button>
-                                <button className="size-12 rounded-full border border-white/10 flex items-center justify-center text-white active:scale-95 transition-all">
+                                <button className="size-12 rounded-full border border-white/10 hover:border-[#1db954]/60 flex items-center justify-center text-white active:scale-95 transition-all">
                                    <Sparkles className="size-6" />
                                 </button>
-                                <button className="size-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-colors ml-auto border border-white/5">
+                                <button className="size-12 rounded-full bg-[#242424] hover:bg-[#2a2a2a] flex items-center justify-center text-white transition-colors ml-auto border border-white/5">
                                    <Plus className="size-6" />
                                 </button>
                              </div>
@@ -274,7 +274,7 @@ function AppContent() {
                                    <Play className="size-8 fill-white text-white ml-2" />
                                 </div>
                               </div>
-                              <span className="text-sm font-medium text-white/60 group-hover:text-white transition-colors">{song.artist.name}</span>
+                              <span className="text-sm font-medium text-[#b3b3b3] group-hover:text-white transition-colors">{song.artist.name}</span>
                            </div>
                          ))}
                        </div>

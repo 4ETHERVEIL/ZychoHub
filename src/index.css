@@ -1,14 +1,18 @@
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
 
 @theme {
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
-  --glass-bg: rgba(255, 255, 255, 0.03);
+  --spotify-green: #1db954;
+  --spotify-green-soft: rgba(29, 185, 84, 0.18);
+  --spotify-card: #181818;
+  --spotify-card-hover: #282828;
+  --glass-bg: rgba(18, 18, 18, 0.92);
   --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  --glass-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
 }
 
 * {
@@ -16,19 +20,30 @@
 }
 
 body {
-  @apply bg-[#080808] text-white min-h-screen selection:bg-white/20 overflow-hidden;
+  @apply bg-black text-white min-h-screen selection:bg-[#1db954]/40 overflow-hidden;
   font-family: "DM Sans", sans-serif;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at top left, rgba(29,185,84,0.22), transparent 28rem),
+    linear-gradient(180deg, #121212 0%, #050505 42%, #000 100%);
+  z-index: -1;
 }
 
 @layer components {
   .glass-panel {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(18, 18, 18, 0.88);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   .glass-surface {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(18, 18, 18, 0.94);
     backdrop-filter: blur(40px);
     border: 1px solid rgba(255, 255, 255, 0.07);
   }
@@ -63,3 +78,12 @@ body {
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
+
+
+@layer utilities {
+  .spotify-green { color: #1db954; }
+  .spotify-bg { background: #1db954; }
+  .spotify-card { background: #181818; }
+  .spotify-card:hover { background: #282828; }
+  .spotify-gradient { background: linear-gradient(180deg, rgba(29,185,84,.24), rgba(18,18,18,.92) 34%, #000 100%); }
+}
