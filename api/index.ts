@@ -1,5 +1,6 @@
 import express from "express";
 import YTMusic from "ytmusic-api";
+import ytdl from "@distube/ytdl-core";
 import { GoogleGenAI } from "@google/genai";
 
 const app = express();
@@ -35,6 +36,28 @@ app.use(express.json());
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", initialized, timestamp: new Date().toISOString() });
+});
+
+
+app.get("/api/stream/:videoId", async (req, res) => {
+  try {
+    const { videoId } = req.params;
+    if (!ytdl.validateID(videoId)) return res.status(400).json({ error: "Invalid video id" });
+
+    const info = await ytdl.getInfo(videoId);
+    const format = ytdl.chooseFormat(info.formats, {
+      quality: "highestaudio",
+      filter: "audioonly"
+    });
+
+    if (!format?.url) return res.status(404).json({ error: "Audio stream not found" });
+
+    res.setHeader("Cache-Control", "no-store");
+    res.redirect(format.url);
+  } catch (error) {
+    console.error("Stream error:", error);
+    res.status(500).json({ error: "Stream failed", details: error instanceof Error ? error.message : String(error) });
+  }
 });
 
 // API routes

@@ -1,7 +1,6 @@
 import { motion, AnimatePresence } from "motion/react";
 import { Play, Pause, SkipBack, SkipForward, Volume2, Mic2, Repeat, Shuffle, ListMusic, Heart, ChevronDown, MoreVertical } from "lucide-react";
 import { useEffect, useRef, useState, useCallback } from "react";
-import YouTube, { YouTubeProps } from "react-youtube";
 import { Song } from "../types";
 import { cn, formatTime } from "../lib/utils";
 import { useMusic } from "../context/MusicContext";
@@ -25,9 +24,8 @@ export default function Player({ currentSong, isPlaying, onPlayPause, onOpenLyri
   const [lyricsLoading, setLyricsLoading] = useState(false);
   const [isShuffled, setIsShuffled] = useState(false);
   const [repeatMode, setRepeatMode] = useState<'off' | 'all' | 'one'>('off');
-  const [playerReady, setPlayerReady] = useState(false);
   const { isLiked, toggleLike, queue } = useMusic();
-  const playerRef = useRef<any>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isPlayingRef = useRef(isPlaying);
 
@@ -43,72 +41,76 @@ export default function Player({ currentSong, isPlaying, onPlayPause, onOpenLyri
       .catch(() => { setLyrics("Lirik tidak tersedia."); setLyricsLoading(false); });
   }, [currentSong?.videoId]);
 
-  const controlPlayer = useCallback((play: boolean) => {
-    if (!playerRef.current || !playerReady) return;
-    try { play ? playerRef.current.playVideo() : playerRef.current.pauseVideo(); } catch(e) {}
-  }, [playerReady]);
+  const streamUrl = currentSong ? `/api/stream/${currentSong.videoId}` : "";
 
-  useEffect(() => { controlPlayer(isPlaying); }, [isPlaying, controlPlayer]);
-
-  // Progress tracker
   useEffect(() => {
-    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-    if (isPlaying && playerReady) {
-      progressIntervalRef.current = setInterval(() => {
-        try {
-          const t = playerRef.current?.getCurrentTime?.() ?? 0;
-          const d = playerRef.current?.getDuration?.() ?? 0;
-          if (!isNaN(t)) setProgress(t);
-          if (!isNaN(d) && d > 0) setDuration(d);
-        } catch(e) {}
-      }, 500);
-    }
-    return () => { if (progressIntervalRef.current) clearInterval(progressIntervalRef.current); };
-  }, [isPlaying, playerReady]);
-
-  const onPlayerReady: YouTubeProps['onReady'] = (event) => {
-    playerRef.current = event.target;
-    setPlayerReady(true);
-    try { event.target.setVolume(volume * 100); } catch(e) {}
-    if (currentSong && "mediaSession" in navigator) {
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: currentSong.name,
-        artist: currentSong.artist.name,
-        album: "Musicply",
-        artwork: currentSong.thumbnails.map(t => ({ src: t.url, sizes: `${t.width}x${t.height}`, type: "image/jpeg" }))
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.volume = volume;
+    if (isPlaying) {
+      audio.play().catch((err) => {
+        console.warn("Audio play blocked:", err);
+        onPlayPause(false);
       });
-      navigator.mediaSession.setActionHandler("play", () => onPlayPause(true));
-      navigator.mediaSession.setActionHandler("pause", () => onPlayPause(false));
-      navigator.mediaSession.setActionHandler("nexttrack", () => onSkipNext?.());
+    } else {
+      audio.pause();
     }
-    if (isPlayingRef.current) setTimeout(() => { try { event.target.playVideo(); } catch(e) {} }, 300);
+  }, [isPlaying, currentSong?.videoId, volume, onPlayPause]);
+
+  useEffect(() => {
+    if (!currentSong || !("mediaSession" in navigator)) return;
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: currentSong.name,
+      artist: currentSong.artist.name,
+      album: "Musicply",
+      artwork: currentSong.thumbnails.map(t => ({ src: t.url, sizes: `${t.width}x${t.height}`, type: "image/jpeg" }))
+    });
+    navigator.mediaSession.setActionHandler("play", () => onPlayPause(true));
+    navigator.mediaSession.setActionHandler("pause", () => onPlayPause(false));
+    navigator.mediaSession.setActionHandler("nexttrack", () => onSkipNext?.());
+    navigator.mediaSession.setActionHandler("previoustrack", () => {});
+  }, [currentSong, onPlayPause, onSkipNext]);
+
+  const onAudioLoaded = () => {
+    const d = audioRef.current?.duration ?? 0;
+    if (!isNaN(d) && isFinite(d) && d > 0) setDuration(d);
+    if (isPlayingRef.current) audioRef.current?.play().catch(() => onPlayPause(false));
   };
 
-  const onPlayerStateChange: YouTubeProps['onStateChange'] = (event) => {
-    if (event.data === 1) onPlayPause(true);
-    if (event.data === 2) onPlayPause(false);
-    if (event.data === 0) {
-      if (repeatMode === 'one') { try { playerRef.current?.seekTo(0); playerRef.current?.playVideo(); } catch(e) {} }
-      else onSkipNext?.();
+  const onAudioTimeUpdate = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (!isNaN(audio.currentTime)) setProgress(audio.currentTime);
+    if (!isNaN(audio.duration) && isFinite(audio.duration) && audio.duration > 0) setDuration(audio.duration);
+  };
+
+  const onAudioEnded = () => {
+    if (repeatMode === 'one') {
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => onPlayPause(false));
+      }
+    } else {
+      onSkipNext?.();
     }
   };
 
-  const onPlayerError = (event: any) => {
-    console.error("YT Error:", event.data);
+  const onAudioError = () => {
+    console.error("Audio stream error");
     onPlayPause(false);
-    if ([100, 101, 150].includes(event.data)) setTimeout(() => onSkipNext?.(), 1500);
+    setTimeout(() => onSkipNext?.(), 1500);
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const t = Number(e.target.value);
-    try { playerRef.current?.seekTo(t, true); } catch(e) {}
+    if (audioRef.current) audioRef.current.currentTime = t;
     setProgress(t);
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = Number(e.target.value);
     setVolume(v);
-    try { playerRef.current?.setVolume(v * 100); } catch(e) {}
+    if (audioRef.current) audioRef.current.volume = v;
   };
 
   if (!currentSong) return null;
@@ -117,17 +119,18 @@ export default function Player({ currentSong, isPlaying, onPlayPause, onOpenLyri
 
   return (
     <>
-      {/* Hidden YouTube Player */}
-      <div style={{ position: 'fixed', top: 0, left: 0, width: 1, height: 1, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}>
-        <YouTube
-          key={currentSong.videoId}
-          videoId={currentSong.videoId}
-          opts={{ height: '1', width: '1', playerVars: { autoplay: 1, controls: 0, modestbranding: 1, rel: 0, playsinline: 1, enablejsapi: 1, origin: typeof window !== 'undefined' ? window.location.origin : '' } }}
-          onReady={onPlayerReady}
-          onStateChange={onPlayerStateChange}
-          onError={onPlayerError}
-        />
-      </div>
+      {/* Real audio element for Android Chrome background playback */}
+      <audio
+        ref={audioRef}
+        key={currentSong.videoId}
+        src={streamUrl}
+        preload="auto"
+        playsInline
+        onLoadedMetadata={onAudioLoaded}
+        onTimeUpdate={onAudioTimeUpdate}
+        onEnded={onAudioEnded}
+        onError={onAudioError}
+      />
 
       {/* Mobile Mini Player */}
       <motion.div initial={{ y: 100 }} animate={{ y: 0 }} className="md:hidden fixed bottom-16 left-2 right-2 z-50 rounded-xl overflow-hidden">
