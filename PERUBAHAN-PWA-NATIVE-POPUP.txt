@@ -1,0 +1,11 @@
+Perubahan terbaru:
+1. Tombol Download / Install PWA sekarang memakai native browser prompt `beforeinstallprompt`, jadi popup akan muncul seperti contoh: "Instal aplikasi" dengan tombol Batal dan Instal.
+2. Event PWA ditangkap lebih awal dari index.html agar prompt tidak hilang sebelum React siap.
+3. Ditambah fallback pesan kalau prompt belum muncul: refresh halaman / menu ⋮ Chrome > Install app.
+4. Service worker, manifest, icon 192/512, offline page tetap aktif.
+5. Build sudah dites: npm run build OK.
+
+Catatan penting:
+- Popup native hanya muncul di HTTPS/domain deploy, bukan dari file lokal.
+- Kalau aplikasi sudah pernah terinstall, Chrome biasanya tidak menampilkan popup lagi.
+- Kalau user pernah klik Batal, Chrome bisa menahan prompt beberapa waktu; refresh atau buka tab baru.

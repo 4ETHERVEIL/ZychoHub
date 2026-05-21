@@ -12,6 +12,21 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="ZychoHub" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+
+    <script>
+      window.__zychoDeferredPrompt = null;
+      window.__zychoPwaInstalled = false;
+      window.addEventListener('beforeinstallprompt', function (event) {
+        event.preventDefault();
+        window.__zychoDeferredPrompt = event;
+        window.dispatchEvent(new Event('zycho-pwa-ready'));
+      });
+      window.addEventListener('appinstalled', function () {
+        window.__zychoPwaInstalled = true;
+        window.__zychoDeferredPrompt = null;
+        window.dispatchEvent(new Event('zycho-pwa-installed'));
+      });
+    </script>
     <!-- Open Graph -->
     <meta property="og:title" content="ZychoHub Music" />
     <meta property="og:description" content="Streaming musik modern bergaya Spotify" />
