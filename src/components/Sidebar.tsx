@@ -39,7 +39,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     >
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-3 mb-2">
-        <img src="/zycho-logo.jpg" alt="Musicply" className="size-9 rounded-full object-cover border border-[#a020f0]/60 shadow-lg" />
+        <img src="https://i.ibb.co.com/23WrR2P4//zycho-logo.jpg" alt="Musicply" className="size-9 rounded-full object-cover border border-[#a020f0]/60 shadow-lg" />
         <span className="font-black text-lg tracking-tight text-white">Musicply</span>
       </div>
       <div className="bg-[#121212] border border-white/5 rounded-2xl p-2 mb-2">

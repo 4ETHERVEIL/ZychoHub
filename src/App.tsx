@@ -121,7 +121,7 @@ function AppContent() {
         {/* Mobile Header / Top Nav */}
         <header className="h-14 md:h-16 flex items-center justify-between px-4 md:px-6 shrink-0 bg-[#121212]/85 backdrop-blur-md md:rounded-2xl border border-white/5 z-20">
           <div className="flex items-center gap-3">
-             <img src="/zycho-logo.jpg" alt="ZychoDev" className="size-8 rounded-full object-cover border border-white/20" />
+             <img src="https://i.ibb.co.com/23WrR2P4//zycho-logo.jpg" alt="ZychoDev" className="size-8 rounded-full object-cover border border-white/20" />
              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2">
                 {["Semua", "Musik"].map((tab, i) => (
                   <button 
