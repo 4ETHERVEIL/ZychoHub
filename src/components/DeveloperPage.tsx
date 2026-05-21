@@ -25,7 +25,7 @@ export default function DeveloperPage({ onBack }: DeveloperPageProps) {
              <div className="absolute -inset-4 bg-gradient-to-tr from-[#a020f0]/25 to-transparent rounded-full blur-2xl animate-pulse" />
              <div className="size-48 rounded-full overflow-hidden border-4 border-[#1f1f1f] shadow-2xl relative mb-6">
                <img 
-                 src="/zycho-logo.jpg" 
+                 src="https://i.ibb.co.com/23WrR2P4/zycho-logo.jpg" 
                  className="w-full h-full object-cover bg-black" 
                  alt="ZychoDev" 
                />
