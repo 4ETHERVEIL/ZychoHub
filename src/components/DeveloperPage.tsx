@@ -1,58 +1,15 @@
-import { useEffect, useState } from "react";
-import { ArrowLeft, Globe, Youtube, Twitter, Instagram, Coffee, Download, CheckCircle2, Smartphone } from "lucide-react";
+import { ArrowLeft, Globe, Youtube, Twitter, Instagram, Coffee, Download, CheckCircle2, Smartphone, WifiOff } from "lucide-react";
+import { usePwaInstall } from "../hooks/usePwaInstall";
 
 interface DeveloperPageProps {
   onBack: () => void;
 }
 
-type BeforeInstallPromptEvent = Event & {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
-};
-
 export default function DeveloperPage({ onBack }: DeveloperPageProps) {
-  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isInstalled, setIsInstalled] = useState(false);
-
-  useEffect(() => {
-    const standalone = window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone === true;
-    setIsInstalled(standalone);
-
-    const handleBeforeInstallPrompt = (event: Event) => {
-      event.preventDefault();
-      setInstallPrompt(event as BeforeInstallPromptEvent);
-    };
-
-    const handleInstalled = () => {
-      setIsInstalled(true);
-      setInstallPrompt(null);
-    };
-
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-    window.addEventListener("appinstalled", handleInstalled);
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-      window.removeEventListener("appinstalled", handleInstalled);
-    };
-  }, []);
+  const { canInstall, isInstalled, isOnline, installLabel, installMessage, install } = usePwaInstall();
 
   const handleInstall = async () => {
-    if (isInstalled) {
-      alert("Aplikasi sudah terpasang di perangkat ini.");
-      return;
-    }
-
-    if (installPrompt) {
-      await installPrompt.prompt();
-      const choice = await installPrompt.userChoice;
-      if (choice.outcome === "accepted") {
-        setInstallPrompt(null);
-      }
-      return;
-    }
-
-    alert("Untuk memasang PWA: buka menu browser (⋮), lalu pilih 'Tambahkan ke layar utama' atau 'Install app'.");
+    await install();
   };
 
   const socialLinks = [
@@ -124,11 +81,18 @@ export default function DeveloperPage({ onBack }: DeveloperPageProps) {
               className="w-full bg-[#a020f0] text-white p-5 md:p-7 rounded-2xl flex items-center justify-center gap-3 text-lg md:text-xl font-black hover:bg-[#b437ff] active:scale-[0.99] transition-all shadow-2xl shadow-[#a020f0]/25"
             >
               {isInstalled ? <Smartphone className="size-6" /> : <Download className="size-6" />}
-              <span>{isInstalled ? "PWA Sudah Terinstall" : "Download / Install PWA"}</span>
+              <span>{installLabel}</span>
             </button>
 
             <div className="rounded-2xl border border-white/5 bg-black/25 p-4 text-sm text-white/45 leading-relaxed">
-              Tombol download sekarang memasang web sebagai PWA. Di Chrome Android akan muncul pilihan install. Kalau prompt belum muncul, gunakan menu browser ⋮ lalu pilih Tambahkan ke layar utama.
+              {!isOnline && (
+                <span className="mb-2 flex items-center gap-2 text-yellow-300">
+                  <WifiOff className="size-4" /> Mode offline aktif. Halaman utama tetap bisa dibuka dari cache.
+                </span>
+              )}
+              {installMessage || (canInstall
+                ? "PWA siap dipasang. Tekan tombol download untuk install seperti aplikasi."
+                : "Kalau prompt belum muncul, buka menu browser ⋮ / ikon install lalu pilih Install app atau Tambahkan ke layar utama.")}
             </div>
           </div>
         </section>

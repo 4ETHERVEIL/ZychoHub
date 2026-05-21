@@ -11,11 +11,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="ZychoHub" />
-    <link rel="apple-touch-icon" href="/zycho-logo.jpg" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <!-- Open Graph -->
     <meta property="og:title" content="ZychoHub Music" />
     <meta property="og:description" content="Streaming musik modern bergaya Spotify" />
-    <meta property="og:image" content="/zycho-logo.jpg" />
+    <meta property="og:image" content="/icons/icon-512.png" />
   </head>
   <body>
     <div id="root"></div>
@@ -25,6 +25,7 @@
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js').then(reg => {
             console.log('SW registered:', reg.scope);
+            reg.update();
           }).catch(err => console.log('SW error:', err));
         });
       }

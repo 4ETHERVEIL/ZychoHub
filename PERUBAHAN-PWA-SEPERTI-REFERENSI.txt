@@ -1,0 +1,9 @@
+Update PWA:
+- Fungsi tombol Download mengikuti pola PWA modern: menangkap event beforeinstallprompt, menampilkan prompt install, mendeteksi appinstalled, dan menampilkan status sudah terinstall.
+- Tambah fallback instruksi install manual jika browser belum mengeluarkan prompt.
+- Tambah deteksi online/offline.
+- Tambah offline.html dan service worker cache app-shell + runtime cache.
+- Tambah icon PWA PNG 192x192 dan 512x512 agar manifest lebih valid.
+- Update manifest dengan start_url, scope, display_override, shortcuts, dan maskable icon.
+- UI desktop/PC halaman Tentang tetap dibuat layout 2 kolom agar lebih jelas.
+- Build dan TypeScript check sudah lulus.
