@@ -1,0 +1,9 @@
+{
+  "name": "ZychoMusic",
+  "description": "Platform streaming musik modern oleh ZychoDev dengan desain Glassmorphic.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
