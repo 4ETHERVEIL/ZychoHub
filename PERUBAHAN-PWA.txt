@@ -1,0 +1,13 @@
+Perubahan:
+1. Halaman Tentang diperbaiki untuk tampilan desktop/PC: layout responsif 2 kolom, card lebih rapi, tombol lebih jelas.
+2. Tombol Download APK diubah menjadi Download / Install PWA.
+3. Klik tombol download akan memunculkan prompt install PWA di Chrome/Edge jika tersedia.
+4. Jika prompt belum tersedia, muncul instruksi install manual lewat menu browser.
+5. Manifest PWA diperbaiki: name, short_name, start_url, scope, theme_color, icons.
+6. Service worker diperbaiki: cache app shell, fallback navigasi offline, cache asset lokal.
+7. Meta tag index.html diperbaiki untuk PWA dan branding ZychoHub.
+8. Bug playlist kosong diperbaiki agar tidak error saat jumlah lagu sedikit.
+
+Sudah dites:
+- npm run lint: OK
+- npm run build: OK

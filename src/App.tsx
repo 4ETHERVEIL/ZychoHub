@@ -217,7 +217,7 @@ function AppContent() {
                              onClick={() => handlePlaySong(song)}
                              className="flex items-center gap-3 bg-[#181818] hover:bg-[#282828] transition-colors rounded-md overflow-hidden cursor-pointer h-14 md:h-16 group"
                            >
-                             <img src={song.thumbnails[0]?.url} className="size-14 md:size-16 object-cover shadow-2xl" alt="" />
+                             <img src={song.thumbnails[0]?.url || "/zycho-logo.jpg"} className="size-14 md:size-16 object-cover shadow-2xl" alt="" />
                              <span className="text-[11px] font-bold truncate pr-3 flex-1">{song.name}</span>
                              <div className="size-10 rounded-full bg-[#a020f0] items-center justify-center mr-2 shadow-lg hidden group-hover:flex transform translate-y-1 group-hover:translate-y-0 transition-all">
                                 <Play className="size-4 fill-black text-black ml-1" />
@@ -236,13 +236,13 @@ function AppContent() {
                       <div className="flex items-center gap-6 overflow-x-auto no-scrollbar pb-4 px-2">
                         {[
                           { title: "2026 🎵 Best Relaxing", count: "60 lagu", songs: (songs || []).slice(0, 3) },
-                          { title: "Trending Indonesia", count: "45 lagu", songs: (songs || []).slice(4, 7) },
-                          { title: "Soft Study Beats", count: "120 lagu", songs: (songs || []).slice(8, 11) }
-                        ].map((playlist, idx) => (
+                          { title: "Trending Indonesia", count: "45 lagu", songs: (songs || []).slice(3, 6) },
+                          { title: "Soft Study Beats", count: "120 lagu", songs: (songs || []).slice(0, 3) }
+                        ].filter((playlist) => playlist.songs.length > 0).map((playlist, idx) => (
                           <div key={idx} className="min-w-[280px] bg-[#181818] hover:bg-[#282828] transition-colors rounded-xl p-5 group flex flex-col h-[420px] shadow-2xl">
                              <div className="grid grid-cols-2 gap-0.5 rounded-2xl overflow-hidden mb-5 aspect-square border border-white/5">
-                               {(playlist.songs || []).concat((songs || []).slice(12, 13)).slice(0, 4).map((s, i) => (
-                                 <img key={i} src={s.thumbnails[0]?.url} className="size-full object-cover" alt="" />
+                               {(playlist.songs || []).concat((songs || []).slice(0, 4)).slice(0, 4).map((s, i) => (
+                                 <img key={i} src={s.thumbnails[0]?.url || "/zycho-logo.jpg"} className="size-full object-cover" alt="" />
                                ))}
                              </div>
                              <h3 className="text-xl font-bold mb-1 leading-tight">{playlist.title}</h3>
@@ -250,7 +250,7 @@ function AppContent() {
                              <div className="space-y-4 mb-8">
                                {playlist.songs.map((s, i) => (
                                  <div key={i} className="flex items-center gap-4">
-                                   <img src={s.thumbnails[0]?.url} className="size-10 rounded-lg shadow-lg" alt="" />
+                                   <img src={s.thumbnails[0]?.url || "/zycho-logo.jpg"} className="size-10 rounded-lg shadow-lg" alt="" />
                                    <div className="flex flex-col min-w-0">
                                       <span className="text-sm font-bold truncate leading-none mb-1">{s.name}</span>
                                       <span className="text-[11px] text-white/40 truncate leading-none">{s.artist.name}</span>
@@ -260,7 +260,7 @@ function AppContent() {
                              </div>
                              <div className="flex items-center gap-4 mt-auto">
                                 <button 
-                                  onClick={() => handlePlaySong(playlist.songs[0], playlist.songs)}
+                                  onClick={() => playlist.songs[0] && handlePlaySong(playlist.songs[0], playlist.songs)}
                                   className="size-12 rounded-full bg-[#a020f0] flex items-center justify-center text-black shadow-lg shadow-black/30 active:scale-95 transition-all hover:bg-white/90"
                                 >
                                    <Play className="size-6 fill-current ml-0.5" />
@@ -284,7 +284,7 @@ function AppContent() {
                          {(songs || []).slice(0, 8).map((song) => (
                            <div key={`artist-${song.videoId}`} className="flex flex-col items-center gap-3 min-w-[100px] group cursor-pointer" onClick={() => handlePlaySong(song)}>
                               <div className="relative size-24 md:size-28">
-                                <img src={song.thumbnails[0]?.url} className="size-full rounded-full object-cover shadow-2xl transition-transform group-hover:scale-105" alt="" />
+                                <img src={song.thumbnails[0]?.url || "/zycho-logo.jpg"} className="size-full rounded-full object-cover shadow-2xl transition-transform group-hover:scale-105" alt="" />
                                 <div className="absolute inset-0 bg-black/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                    <Play className="size-8 fill-white text-white ml-2" />
                                 </div>

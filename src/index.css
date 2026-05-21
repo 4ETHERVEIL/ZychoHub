@@ -87,3 +87,15 @@ body::before {
   .spotify-card:hover { background: #282828; }
   .spotify-gradient { background: linear-gradient(180deg, rgba(29,185,84,.24), rgba(18,18,18,.92) 34%, #000 100%); }
 }
+
+@media (min-width: 768px) {
+  main {
+    scrollbar-gutter: stable;
+  }
+
+  .spotify-gradient {
+    background:
+      radial-gradient(circle at 20% 0%, rgba(160, 32, 240, 0.24), transparent 34rem),
+      linear-gradient(180deg, rgba(29, 185, 84, 0.16), rgba(18, 18, 18, 0.94) 34%, #000 100%);
+  }
+}
